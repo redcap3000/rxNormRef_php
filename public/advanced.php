@@ -112,13 +112,22 @@
         </div>
 		<div id ='content'>";
 
-if(!$_POST['searchTerm']){
-	if($_GET['u']) $_POST['u'] = $_GET['u'];
-	elseif($_GET['r']) $_POST['r'] = $_GET['r'];
-}elseif($_POST) {
-	if($_POST['related'] && count($_POST['related']) == 13) unset($_POST['related']);
-	if($_POST['id_lookup'] && $_POST['extra'] != '') unset ($_POST['extra']);
+
+
+ if(!$_POST['searchTerm']){
+         if($_GET['u'])
+                $_POST['u'] = $_GET['u'];
+         elseif($_GET['r'])
+                $_POST['r'] = $_GET['r'];
+  }
+
+
+if($_POST['searchTerm'] || $_GET['r'] || $_GET['u']){
+        //if someone checks all the boxes it is the same as checking none of them
+        if($_POST['related'] && count($_POST['related']) == 13) unset($_POST['related']);
+        if($_POST['id_lookup'] && $_POST['extra'] != '') unset ($_POST['extra']);
 	require("../lib/rxNormRef.php"); 
+
 }
 
 ?>
