@@ -5,19 +5,16 @@
                 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 				<meta http-equiv="Content-Style-Type" content="text/css" />
                 	<?php
-			echo '<link rel="stylesheet" type="text/css" href="css/'.($_POST['css_wide']?'wide.css':'fixed_field.css').'" />';
-			?>
-        </head>
+                	error_reporting(0);
+			echo '<link rel="stylesheet" type="text/css" href="css/'.($_POST['css_wide']?'wide.css':'fixed_field.css').'" />
+			   </head>
         <body>
         <div id ="page">
         <div id = "header">
         
-        <img src="img/rxnix_logo.gif" alt='rxnix logo'/>
+        <img src="img/rxnix_logo.gif" alt="rxnix logo"/>'
            
-            <?php
-            
-error_reporting(0);
-echo"	<form method='post' action='' class='main_form'>
+    ."	<form method='post' action='' class='main_form'>
 					<fieldset>
 					<legend>Ingredient/Packs</legend>
 							
@@ -114,21 +111,17 @@ echo"	<form method='post' action='' class='main_form'>
       
         </div>
 		<div id ='content'>";
- if(!$_POST['searchTerm']){
-	 if($_GET['u'])
-		$_POST['u'] = $_GET['u'];
-	 elseif($_GET['r'])
-		$_POST['r'] = $_GET['r'];
-  }	
 
-  	
-if($_POST['searchTerm'] || $_GET['r'] || $_GET['u']){
-	//if someone checks all the boxes it is the same as checking none of them
+if(!$_POST['searchTerm']){
+	if($_GET['u']) $_POST['u'] = $_GET['u'];
+	elseif($_GET['r']) $_POST['r'] = $_GET['r'];
+}elseif($_POST) {
 	if($_POST['related'] && count($_POST['related']) == 13) unset($_POST['related']);
 	if($_POST['id_lookup'] && $_POST['extra'] != '') unset ($_POST['extra']);
-	include("../lib/rxNormRef.php");
+	require("../lib/rxNormRef.php"); 
 }
-php?>
+
+?>
 
 		</div>
 				<div id = 'help'>
