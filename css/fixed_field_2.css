@@ -1,0 +1,183 @@
+/* @override http://myparse.net/rxnix.com/fixed_field.css */
+
+/* @override http://rxnix.com/fixed_field.css */
+
+/* @override 
+	http://www.rxnix.com/fixed_field_2.css
+	http://rxnix.com/fixed_field_2.css
+*/
+
+html{margin: 0 auto;
+	font-family: Arial, san-serif;
+}
+
+ul{
+	list-style-type: none;margin: 0;padding: 0;
+
+}
+
+hr{height: 1px;border: dotted maroon 1px;
+width: 875px;}
+
+label{
+	font-size: 14px;
+	white-space: nowrap;
+}
+
+#header {
+margin-left: 200px;
+}
+
+
+#menu li{
+	width: 150px;float: left;
+	text-align: center;
+}
+	
+	#help img{
+	float: left;margin: 0 10px 85px 10px;
+}
+
+#help ul li a {
+	text-align:center; width: 100%;
+}
+
+img.bg_black {
+	background-color: blue;
+}
+
+#header h1 {
+	z-index: 100;width: 130px;
+	color: maroon;
+	font-weight: bold;
+	font-style: italic;
+	font-size: 40px;
+}
+
+#content ul {
+	
+margin: 15px 0;	width: 850px;
+}
+
+#content,#help{
+padding-left: 10px;
+
+border-left: solid maroon 4px;
+
+	margin-left: 200px;
+	width: 700px;
+
+}
+#help{
+	border-left: solid maroon 4px;
+	height: 350px;
+}
+#content{
+	margin-top: 30px;
+}
+
+fieldset{
+	border: none;
+}
+
+#header form.main_form {padding-left: 130px;
+	width: 765px;float: left;
+	margin-top: -20px;border-bottom:solid maroon;margin-bottom: 10px;padding-bottom: 10px;
+}
+.property{
+	float: left;
+	width: 900px;
+	color: maroon;
+	font-weight: bold;
+	text-align: left;
+	font-size: 18px;
+	padding-bottom: 5px;margin: 10px 0;
+}
+legend{
+	text-align:center;
+	font-weight: bold;width: 230px;
+	margin: 10px;
+}
+
+#header form.main_form fieldset{
+	margin: 0;padding: 0 10px; 
+	float: left;
+}
+
+
+
+#header form.main_form fieldset ul {
+	width: 200px;
+float: left;margin-top: -60px;
+}
+
+div#led{float: left;width: 895px;
+border-bottom: solid maroon 4px;z-index: 1;
+}
+
+.term_result {
+	z-index: 10;
+	left: 650px;
+	top: 40px;
+}
+
+#header form.main_form fieldset ul li {
+	width: 150px;float: left;
+}
+
+
+div#led li,.record_select li,.record_name,.record_umlscui,.record_rxcui,.record_synonym{
+	padding: 5px 10px;
+	width: 100px;float: left;
+	position: relative;
+}
+
+.record_rxcui{
+	width: 60px !IMPORTANT;
+	font-weight: bold;
+	font-family: "Courier New", Courier, mono;
+}
+
+.record_name{
+
+	width: 400px !IMPORTANT;
+}
+
+.record_umlscui {
+	width: 80px;
+	text-align: center;
+border: solid maroon 1px;
+	font-weight: bold;margin-bottom: 5px;
+}
+
+
+.record_synonym{
+	min-width: 200px;
+	border-top: solid white 0px;
+	font-weight: bold;
+	font-style: italic;
+}
+
+
+#help ul li {
+	width: 380px;float: left;
+	padding: 10px;
+}
+
+#stats {
+	position: fixed;
+	right: 200px;
+	display:none;
+}
+
+
+#help ul {
+	width: 900px;
+	float: left;
+}
+
+
+
+
+
+

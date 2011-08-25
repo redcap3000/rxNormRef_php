@@ -31,7 +31,7 @@
 	 elseif($_GET['r'])
 		$_POST['r'] = $_GET['r'];
   }	
- if($_POST['searchTerm'] || $_GET['r'] || $_GET['u'])	include('rxNormRef.php'); 
+ if($_POST['searchTerm'] || $_GET['r'] || $_GET['u'])	include('lib/rxNormRef.php'); 
  
  ?>
 		</div>
