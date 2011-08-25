@@ -41,36 +41,26 @@ class rxNormRef{
 
 	}
 
-	function post_check(){
+		function post_check(){
 	// idea why not use relatedBy and allow for lookup by id in the same form?
-	
 		if(count($_POST) > 1)
 			foreach($_POST as $key=>$value){
 				if($key == 'relatedBy' && is_array($value)){
 					unset($_POST['related']);
 					$formatted= implode('+',$_POST['relatedBy']);
-					
 					}
-			
-				if($key == 'related' && is_array($value)){
+				if($key == 'related' && is_array($value))
 					$formatted= implode('+',$_POST['related']);
-					}
-					
 				if($key == 'searchTerm')
 					$_POST['searchTerm']=trim($_POST['searchTerm']);
-				if($key == 'extra' && is_array($value)){
-					foreach($extra as $value2){
+				if($key == 'extra' && is_array($value))
+					foreach($extra as $value2)
 						$extras[]= $value2;
-					
-					}
-					// add the UNII code to the result menu??
-					}
 				}
 
 		$cacher = self::ob_cacher();
 		if($cacher == TRUE) return 0;
 			if($_POST['searchTerm'] || $_POST['r']  || $_POST['u']) {
-			
 			// look up inside of defined cache location
 				if(!class_exists('rxNorm')){
 					require 'APIBaseClass.php';
@@ -98,28 +88,32 @@ class rxNormRef{
 							break;
 
 					}
-					
 					echo '<p class="term_result"><em>RXCUI: <i>'."$id</i><br> Matches <i>$value_d</i></em></p>";
-					$xml = NULL;							
-
-			}
-
-				if($_POST['id_lookup']){
-				
-					$xml = $this->api->findRxcuiByID($_POST['id_lookup'],$_POST['searchTerm']);
+					$xml = NULL;
+				}
+				if($_POST['id_lookup'] || $_POST['u'] ){
+					$lookup = $_POST['searchTerm'];
+					
+					if($_POST['id_lookup']){
+						$id_type = $_POST['id_lookup'];
+						
+					}elseif($_POST['u']){
+						$id_type = 'UMLSCUI';
+						$lookup = $_POST['u'];	
+					}
+					$xml = $this->api->findRxcuiByID($id_type,$lookup);
 					$xml = (new SimpleXMLElement($xml));
+					// INSERT INTO id_lookup values (p_token,rxcuid,umlscui,term_name) values ('obcer::cache_token()',$id,$uml,$term)
 					$id = $xml->idGroup->rxnormId;
-				
+					// do we have a umlid in here??
 				}elseif(!$_POST['extra']){
 					// if we have post extra than we can skip and set id properly?
 					$xml = new SimpleXMLElement($this->api->findRxcuiByString($_POST['searchTerm']));
 					$id = $xml->idGroup->rxnormId;
-				
 				}
-				if($id != '' && !$_POST['extra'] && !$_POST['r'] && !$_POST['u']) {
-				// sometimes we come up with nothing but the legend thing shows up anyway ....
+				if($id != '' && !$_POST['extra'] && !$_POST['r'] && !$_POST['u']) 
 					echo '<p class="term_result">Term "<em>'. $_POST['searchTerm'] . ($_POST['id_lookup']? " of ID type " . $_POST['id_lookup'] : NULL) . '</em>" matches RXCUI: <em>' .$id . "</em></p>\n" ;
-				}
+				
 				elseif(!$_POST['extra'] && !$_POST['r'] && !$_POST['u']){
 					$search = new SimpleXMLElement($this->api->getSpellingSuggestions($_POST['searchTerm']));
 					echo '<p class="term_result"><em>Term "'. $_POST['searchTerm'].'" not found</em></p>';
@@ -137,35 +131,22 @@ class rxNormRef{
 						$_POST['searchTerm'] =$first;
 						unset($xml);
 					}
-				}elseif($_POST['u']){
-				// look up by 
-					$id = trim($_POST['u']);
-					$xml = new SimpleXMLElement($this->api->findRxcuiByID('UMLSCUI',$id));
-					$id =  $xml->idGroup->rxnormId;
-					
-				}elseif($_POST['r']){
+				}elseif($_POST['r'])
 					$id= trim($_POST['r']);
-				}
-				if($id){
-				// look up all related info
+				
+				if($id)
 				// wish i could do this so it doesnt have to load the API ...
 				// perhaps make like a search lookup hash table for the XML files ..
 					if(CACHE_XML){
-					
-					$x_token = self::cache_token();
-					// to do make output 'prettier'
-					// add config to allow to render from xml or html
+						$x_token = self::cache_token();
 						$put_file = XML_STORE . $x_token;
 						if(!file_exists($put_file)){
-							
 							$xml = self::make_xml($id,$formatted);
 							file_put_contents("$put_file", $xml->asXML());
 							}
-						else{
-							
+						else
 						// get file ?? pull in xml file as URL if it exisists...
 							if(XML_URL_ACCESS){
-									
 									$xml=new SimpleXMLElement(BASE_URL.XML_STORE.$x_token,0,true);
 									$this->cache = 2;
 								}
@@ -173,26 +154,21 @@ class rxNormRef{
 									$xml=new SimpleXMLElement(file_get_contents(SERVER_ROOT.XML_STORE.$x_token));
 									$this->cache = 3;
 								}
-						}
-					}else{
-					$xml = self::make_xml($id,$formatted);
-					}
-			
-				
-				
-					if($formatted){
-						if($_POST['relatedBy']){
-							self::list_2d_xmle($xml);}
+						
+					}else
+						$xml = self::make_xml($id,$formatted);
+					
+					if($formatted)
+						if($_POST['relatedBy'])
+							self::list_2d_xmle($xml);
 						else
 							self::list_2d_xmle($xml->relatedGroup->conceptGroup);
-						}
-					else{
+						
+					else
 						self::list_2d_xmle($xml->allRelatedGroup->conceptGroup);
-						}
+						
 					unset($xml);
 				}
-			}
-		
 			
 	}
 	
