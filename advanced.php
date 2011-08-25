@@ -12,7 +12,7 @@
         <div id ="page">
         <div id = "header">
         
-        <img src="rxnix_logo.gif" alt='rxnix logo'/>
+        <img src="img/rxnix_logo.gif" alt='rxnix logo'/>
            
             <?php
             
@@ -133,14 +133,14 @@ php?>
 		</div>
 				<div id = 'help'>
 				<ul>
-					<li><img class='bg_black' src="nlm-logo-white.png" alt = "National Library of Medicine Logo" title="NLM Logo" align="middle"/>
+					<li><img class='bg_black' src="img/nlm-logo-white.png" alt = "National Library of Medicine Logo" title="NLM Logo" align="middle"/>
 						
 						<em>What is RxNix</em>
 						<p>RxNix is a simple semantic medications tool that intefaces with RxNorm - a database developed at the <a href="http://www.nlm.nih.gov/">National Library of Medicine</a>.</p>
 						<a href="http://www.nlm.nih.gov/research/umls/rxnorm/index.html">About RxNorm</a>
 						</li>
 						
-					<li><img src="UMLS_header_newtree.gif" alt= "Unified Medication Language System" title="UMLS Logo" align="middle"/>
+					<li><img src="img/UMLS_header_newtree.gif" alt= "Unified Medication Language System" title="UMLS Logo" align="middle"/>
 						<em>UMLS</em>
 						
 						<p>RxNorm uses the <a href="http://www.nlm.nih.gov/research/umls/">Unified Medication Language System</a> to enable a variety of systems to communicate with each other.</p> <a href="http://www.nlm.nih.gov/research/umls/quickstart.html">UMLS Quickstart Guide</a>
