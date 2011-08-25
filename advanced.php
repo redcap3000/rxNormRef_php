@@ -126,7 +126,7 @@ if($_POST['searchTerm'] || $_GET['r'] || $_GET['u']){
 	//if someone checks all the boxes it is the same as checking none of them
 	if($_POST['related'] && count($_POST['related']) == 13) unset($_POST['related']);
 	if($_POST['id_lookup'] && $_POST['extra'] != '') unset ($_POST['extra']);
-	include('rxNormRef_php/rxNormRef.php');
+	include('lib/rxNormRef.php');
 }
 php?>
 
