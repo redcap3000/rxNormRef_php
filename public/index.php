@@ -23,10 +23,13 @@ echo
 			</div>
 		<div id ="content">';
 // to do move cacher here ...
-if(!$_POST['searchTerm']){
-	if($_GET['u']) $_POST['u'] = $_GET['u'];
-	elseif($_GET['r']) $_POST['r'] = $_GET['r'];
-}elseif($_POST) require("../lib/rxNormRef.php"); 
+ if(!$_POST['searchTerm']){
+         if($_GET['u'])
+                $_POST['u'] = $_GET['u'];
+         elseif($_GET['r'])
+                $_POST['r'] = $_GET['r'];
+  }
+ if($_POST['searchTerm'] || $_GET['r'] || $_GET['u'])   include("../lib/rxNormRef.php");
 
 ?>
 		</div>
