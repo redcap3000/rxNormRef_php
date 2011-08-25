@@ -6,7 +6,7 @@
 				<meta http-equiv="Content-Style-Type" content="text/css" />
 			<?php
 			error_reporting(0);
-			echo '<link rel="stylesheet" type="text/css" href="'.($_POST['css_wide']?'wide.css':'fixed_field.css').'" />
+			echo '<link rel="stylesheet" type="text/css" href="css/'.($_POST['css_wide']?'wide.css':'fixed_field.css').'" />
                 
         </head>
         <body>
@@ -24,14 +24,13 @@
         </div>
 		<div id ="content">';
 // consider making pretty urls with mod_url...
- 
  if(!$_POST['searchTerm']){
 	 if($_GET['u'])
 		$_POST['u'] = $_GET['u'];
 	 elseif($_GET['r'])
 		$_POST['r'] = $_GET['r'];
   }	
- if($_POST['searchTerm'] || $_GET['r'] || $_GET['u'])	include('lib/rxNormRef.php'); 
+ if($_POST['searchTerm'] || $_GET['r'] || $_GET['u'])	require('lib/rxNormRef.php'); 
  
  ?>
 		</div>
