@@ -5,7 +5,7 @@
                 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 				<meta http-equiv="Content-Style-Type" content="text/css" />
                 	<?php
-			echo '<link rel="stylesheet" type="text/css" href="'.($_POST['css_wide']?'wide.css':'fixed_field.css').'" />';
+			echo '<link rel="stylesheet" type="text/css" href="css/'.($_POST['css_wide']?'wide.css':'fixed_field.css').'" />';
 			?>
         </head>
         <body>
