@@ -1,4 +1,5 @@
 <?php
+
 class rxNormRef{
 	static	$normalElements = Array(
 			'TTY'=>'Term Type','IN'=>'Ingredients','PIN'=>'Precise Ingredient',
@@ -173,6 +174,7 @@ class rxNormRef{
 		if(CACHE_XML){
 			$x_token = obcer::cache_token();
 			$put_file = SERVER_ROOT . XML_STORE . $x_token;
+
 			if(file_exists($put_file)){
 			
 			// get file ?? pull in xml file as URL if it exisists...
@@ -186,23 +188,24 @@ class rxNormRef{
 						$this->cache = 3;
 					}
 				}	
-			else
+			else 
 				unset($this->cache);
 					}
 		
-	if(!CACHE_XML){	
-		if($formatted && !$this->cache){
+	if($formatted && !$this->cache){
 			self::loadRxNorm();
 			$xml = ($_POST['relatedBy']?$this->api->getRelatedByRelationship("$formatted","$id"):$this->api->getRelatedByType("$formatted","$id"));
 			}
 		elseif(!$this->cache){
+		
 			self::loadRxNorm();
 			$xml = $this->api->getAllRelatedInfo($id);
 			}
-	}	
+		
 		// messy but allows us to quickly enable url accessors (for whatever reason..)
 		// could allow for remote caching!
 			$return = (XML_URL_ACCESS && CACHE_XML?$xml:new SimpleXMLElement($xml));
+			
 			if(CACHE_XML && !$this->cache) file_put_contents("$put_file", $return->asXML());
 			return $return;
 		 }
@@ -272,6 +275,7 @@ class rxNormRef{
 				else{
 					// adjust here for pretty URLS
 					// if(PRETTY_GET_URLS)
+					// also adjust for key on dose form - prevent does form rows from having rxcui/umlscui links
 					if($key == 'rxcui' || $key == 'umlscui') $return .= "\n\t". '<li class="record_'.$key.'">'. "<a href='?".($key=='rxcui'?'r':'u')."=$value'>" .($key=='umlscui' && $value ==''?'n/a':$value) . "</a></li>";
 					else
 						$return .= "\n\t". '<li class="record_'.$key.'">'. ($key=='umlscui' && $value ==''?'n/a':$value) . "</li>"; 
