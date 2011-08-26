@@ -1,5 +1,4 @@
 <?php
-print_r($_POST);
 class rxNormRef{
 	static	$normalElements = Array(
 			'TTY'=>'Term Type','IN'=>'Ingredients','PIN'=>'Precise Ingredient',
@@ -100,7 +99,7 @@ class rxNormRef{
 		}
 	
 		if(($_POST['searchTerm'] || $_POST['r'] || $_POST['u']) && !$cached ) {
-	//	print_r($this);
+	
 			// look up inside of defined cache location
 				
 
@@ -174,33 +173,38 @@ class rxNormRef{
 		if(CACHE_XML){
 			$x_token = obcer::cache_token();
 			$put_file = SERVER_ROOT . XML_STORE . $x_token;
-			if(file_exists($put_file))
+			if(file_exists($put_file)){
+			
 			// get file ?? pull in xml file as URL if it exisists...
 				if(XML_URL_ACCESS){
 						$xml=new SimpleXMLElement(BASE_URL.XML_STORE.$x_token,0,true);
 						$this->cache = 2;
 					}
-				else{
-						$xml=new SimpleXMLElement(file_get_contents(SERVER_ROOT.XML_STORE.$x_token));
+				else{	
+						$xml=file_get_contents($put_file);
+						//echo print_r($xml);
 						$this->cache = 3;
 					}
+				}	
 			else
 				unset($this->cache);
 					}
-		else{
-			self::loadRxNorm();
-			if($formatted && !$this->cache)
-			// switch between testing 'relationship' query versus the normal filters and everything
-				$xml = ($_POST['relatedBy']?$this->api->getRelatedByRelationship("$formatted","$id"):$this->api->getRelatedByType("$formatted","$id"));
-			else 
-				$xml = $this->api->getAllRelatedInfo($id);
-				
-		}
 		
-			
-		$return = new SimpleXMLElement($xml);
-		if(CACHE_XML && !$this->cache) file_put_contents("$put_file", $return->asXML());
-		return $return;
+	if(!CACHE_XML){	
+		if($formatted && !$this->cache){
+			self::loadRxNorm();
+			$xml = ($_POST['relatedBy']?$this->api->getRelatedByRelationship("$formatted","$id"):$this->api->getRelatedByType("$formatted","$id"));
+			}
+		elseif(!$this->cache){
+			self::loadRxNorm();
+			$xml = $this->api->getAllRelatedInfo($id);
+			}
+	}	
+		// messy but allows us to quickly enable url accessors (for whatever reason..)
+		// could allow for remote caching!
+			$return = (XML_URL_ACCESS && CACHE_XML?$xml:new SimpleXMLElement($xml));
+			if(CACHE_XML && !$this->cache) file_put_contents("$put_file", $return->asXML());
+			return $return;
 		 }
 
 	function xmle_table_row($key,$value,$key_css_class='property',$value_css_class='value',$first_row=NULL){
