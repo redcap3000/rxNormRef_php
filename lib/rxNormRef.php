@@ -1,6 +1,5 @@
 <?php
-require "../config.php";
-
+print_r($_POST);
 class rxNormRef{
 	static	$normalElements = Array(
 			'TTY'=>'Term Type','IN'=>'Ingredients','PIN'=>'Precise Ingredient',
@@ -9,6 +8,14 @@ class rxNormRef{
 			'SBDF'=>'Semantic Branded Drug Forms','SBD'=>'Semantic Branded Drug','SY'=>'Term Type',
 			'TMSY'=>'Term Type','BPCK'=>'Brand Name Pack','GPCK'=>'Generic Pack');
 
+
+	function loadRxNorm(){
+		if(!class_exists('rxNormApi')){
+				require 'APIBaseClass.php';
+				require 'rxNormApi.php';
+				$this->api = new rxNormApi;	
+			}
+	}
 	function __construct(){
 		$this->start_time = (float) array_sum(explode(' ',microtime()));
 		$this->oh_memory = round(memory_get_usage() / 1024);
@@ -23,7 +30,7 @@ class rxNormRef{
 			if(SHOW_UML == false) $this->c_filter []= 'umlscui';
 		}
 		// of course I could make a checkbox panel to allow for any combination of display fields, and cache entire returned xml results to do manipulations
-		if(PROGRESSIVE_LOAD == true){
+		if(PROGRESSIVE_LOAD){
    	 	    @apache_setenv('no-gzip', 1);
 			@ini_set('zlib.output_compression', 0);
 			@ini_set('implicit_flush', 1);
@@ -34,12 +41,31 @@ class rxNormRef{
 		}
 		// process any post if existant
 		if($_POST) self::post_check();
+		
+		
 		// if we haven't died by now then close and flush the ob cache for the final time
-		self::ob_cacher(1);
+	//	obcer::ob_cacher(1);
 		// echo the footer and stats to screen.
-		echo '<div id="stats">' . self::stats().'</div>';
+		echo '<div id="stats">' . $this->stats().'</div>';
 
 	}
+	
+	
+	
+	function stats(){
+		switch ($this->cache) {
+		default:;break;
+		case 1:$cache = '<p>Rendering from cached HTML (file_get_contents)';break;
+		case 2:$cache = '<p>Rendering from cached XML (as url)';break;
+		case 3:$cache = '<p>Rendering from cached XML (file_get_contents)';break;
+		}
+
+		return $cache .
+			"<em>Memory use: " . round(memory_get_usage() / 1024) . 'k'. "</em></p> <p><em>Load time : "
+	. sprintf("%.4f", (((float) array_sum(explode(' ',microtime())))-$this->start_time)) . " seconds</em></p><p><em>Overhead memory : ".$this->oh_memory." k</em></p>";
+
+	}
+	
 
 		function post_check(){
 	// idea why not use relatedBy and allow for lookup by id in the same form?
@@ -58,39 +84,26 @@ class rxNormRef{
 						$extras[]= $value2;
 				}
 
-		$cacher = self::ob_cacher();
-		if($cacher == TRUE) return 0;
-			if($_POST['searchTerm'] || $_POST['r']  || $_POST['u']) {
+	
+	//	if(obcer::ob_cacher() == TRUE) return 0;
+		$cached=obcer::ob_cacher();
+		switch($cached){
+		
+			case true:
+			// stop processing the rest of the page if HTML cache is encountered
+			return 0;
+			case 0:
+			// Handle XML processing here ...
+			;
+			break;
+		
+		}
+	
+		if(($_POST['searchTerm'] || $_POST['r'] || $_POST['u']) && !$cached ) {
+	//	print_r($this);
 			// look up inside of defined cache location
-				if(!class_exists('rxNorm')){
-					require 'APIBaseClass.php';
-					require 'rxNormApi.php';
-					$this->api = new rxNormApi;	
-				}
+				
 
-				if($_POST['extra'])
-				{
-					switch ($_POST['extra'] ) {
-						case 'UNII':
-							$xml = new SimpleXMLElement($this->api->getUNII( $_POST['searchTerm'] ));
-							$value_d =$xml->uniiGroup->unii;
-							$id = $xml->uniiGroup->rxcui .'';
-							break;
-						case 'Quantity':
-							$xml = new SimpleXMLElement( $this->api->getQuantity( $_POST['searchTerm'] ) );
-							$value_d =$xml->quantityGroup->quantity;
-							$id = $xml->quantityGroup->rxcui . '';
-							break;
-						case 'Strength':
-							$xml = new SimpleXMLElement($this->api->getStrength( $_POST['searchTerm'] ));
-							$value_d = $xml->strengthGroup->strength ;
-							$id = $xml->strengthGroup->rxcui . '';
-							break;
-
-					}
-					echo '<p class="term_result"><em>RXCUI: <i>'."$id</i><br> Matches <i>$value_d</i></em></p>";
-					$xml = NULL;
-				}
 				if($_POST['id_lookup'] || $_POST['u'] ){
 					$lookup = $_POST['searchTerm'];
 					
@@ -99,14 +112,16 @@ class rxNormRef{
 						
 					}elseif($_POST['u']){
 						$id_type = 'UMLSCUI';
-						$lookup = $_POST['u'];	
+						$lookup = trim($_POST['u']);	
 					}
+					self::loadRxNorm();
 					$xml = $this->api->findRxcuiByID($id_type,$lookup);
 					$xml = (new SimpleXMLElement($xml));
 					// INSERT INTO id_lookup values (p_token,rxcuid,umlscui,term_name) values ('obcer::cache_token()',$id,$uml,$term)
 					$id = $xml->idGroup->rxnormId;
 					// do we have a umlid in here??
-				}elseif(!$_POST['extra']){
+				}elseif(!$_POST['extra'] && !$_POST['r'] && !$_POST['u']){
+					self::loadRxNorm();
 					// if we have post extra than we can skip and set id properly?
 					$xml = new SimpleXMLElement($this->api->findRxcuiByString($_POST['searchTerm']));
 					$id = $xml->idGroup->rxnormId;
@@ -115,6 +130,7 @@ class rxNormRef{
 					echo '<p class="term_result">Term "<em>'. $_POST['searchTerm'] . ($_POST['id_lookup']? " of ID type " . $_POST['id_lookup'] : NULL) . '</em>" matches RXCUI: <em>' .$id . "</em></p>\n" ;
 				
 				elseif(!$_POST['extra'] && !$_POST['r'] && !$_POST['u']){
+					//self::loadRxNorm();
 					$search = new SimpleXMLElement($this->api->getSpellingSuggestions($_POST['searchTerm']));
 					echo '<p class="term_result"><em>Term "'. $_POST['searchTerm'].'" not found</em></p>';
 					if($search->suggestionGroup->suggestionList->suggestion){
@@ -129,64 +145,62 @@ class rxNormRef{
 						echo '<p><em>Showing first suggestion '.$first.'.</em></p>';
 						// so we don't store incorrect search values as cache!
 						$_POST['searchTerm'] =$first;
-						unset($xml);
+						//unset($xml);
 					}
 				}elseif($_POST['r'])
 					$id= trim($_POST['r']);
 				
+				// Now we get the actual syntax to return the real xml object
 				if($id)
-				// wish i could do this so it doesnt have to load the API ...
-				// perhaps make like a search lookup hash table for the XML files ..
-					if(CACHE_XML){
-						$x_token = self::cache_token();
-						$put_file = XML_STORE . $x_token;
-						if(!file_exists($put_file)){
-							$xml = self::make_xml($id,$formatted);
-							file_put_contents("$put_file", $xml->asXML());
-							}
-						else
-						// get file ?? pull in xml file as URL if it exisists...
-							if(XML_URL_ACCESS){
-									$xml=new SimpleXMLElement(BASE_URL.XML_STORE.$x_token,0,true);
-									$this->cache = 2;
-								}
-							else{
-									$xml=new SimpleXMLElement(file_get_contents(SERVER_ROOT.XML_STORE.$x_token));
-									$this->cache = 3;
-								}
-						
-					}else
 						$xml = self::make_xml($id,$formatted);
-					
-					if($formatted)
-						if($_POST['relatedBy'])
-							self::list_2d_xmle($xml);
-						else
-							self::list_2d_xmle($xml->relatedGroup->conceptGroup);
-						
+				// Modify output slightly to use filters if provided	
+				if($formatted){
+					// this is still in testing phases - for the relationship checker- returns raw object for now
+					if($_POST['relatedBy'])
+						self::list_2d_xmle($xml);
 					else
-						self::list_2d_xmle($xml->allRelatedGroup->conceptGroup);
-						
-					unset($xml);
+						self::list_2d_xmle($xml->relatedGroup->conceptGroup);
+					}
+				else
+					self::list_2d_xmle($xml->allRelatedGroup->conceptGroup);
 				}
 			
 	}
 	
 	function make_xml($id,$formatted=false){
-
+	// could check post here to see if cache_xml enabled and to return that instead of loading anything ...
 	// switches between several rxnorm api function calls to make the interface more accessible.
 	// add case of 'extra' .. not sure what to store .. and how to recall it properly may need additional rewriting to cache properly...
-		if($formatted){
-			if($_POST['relatedBy']){
-				$xml= $this->api->getRelatedByRelationship("$formatted","$id");
-				echo $xml;
-				}
+		if(CACHE_XML){
+			$x_token = obcer::cache_token();
+			$put_file = SERVER_ROOT . XML_STORE . $x_token;
+			if(file_exists($put_file))
+			// get file ?? pull in xml file as URL if it exisists...
+				if(XML_URL_ACCESS){
+						$xml=new SimpleXMLElement(BASE_URL.XML_STORE.$x_token,0,true);
+						$this->cache = 2;
+					}
+				else{
+						$xml=new SimpleXMLElement(file_get_contents(SERVER_ROOT.XML_STORE.$x_token));
+						$this->cache = 3;
+					}
 			else
-				$xml = $this->api->getRelatedByType("$formatted","$id");
-				}
-		else
-			$xml = $this->api->getAllRelatedInfo($id);
-			return new SimpleXMLElement($xml);
+				unset($this->cache);
+					}
+		else{
+			self::loadRxNorm();
+			if($formatted && !$this->cache)
+			// switch between testing 'relationship' query versus the normal filters and everything
+				$xml = ($_POST['relatedBy']?$this->api->getRelatedByRelationship("$formatted","$id"):$this->api->getRelatedByType("$formatted","$id"));
+			else 
+				$xml = $this->api->getAllRelatedInfo($id);
+				
+		}
+		
+			
+		$return = new SimpleXMLElement($xml);
+		if(CACHE_XML && !$this->cache) file_put_contents("$put_file", $return->asXML());
+		return $return;
 		 }
 
 	function xmle_table_row($key,$value,$key_css_class='property',$value_css_class='value',$first_row=NULL){
@@ -194,52 +208,8 @@ class rxNormRef{
 				(self::$normalElements[strtoupper($value)]?self::$normalElements[strtoupper($value)]:$value)."</li>":NULL);
 	}
 
-	function cache_token(){
-	// generates file name for cache storage
-		if($_POST){
-		// also check count of array to see if it is all of the checkbox, in that case use _allRelatedInfo
-			foreach($_POST as $value){
-				if(is_array($value)){
-					foreach($value as $v2){
-						$token2 [] = trim($v2);
-						}
-					$token2 = implode('_',$token2);
-					$token []= $token2;		
-					}
-				else		
-					$token []= str_replace(' ','',strtolower(trim($value)));
-				}
-				
-			return (HIDE_CACHE?'.':NULL).($token2?implode('__',$token):implode('_',$token).'_allRelatedInfo');
-		}
-	}
 
-	function ob_cacher($stop=NULL){
-		if(PROGRESSIVE_LOAD){		
-			if(CACHE_QUERY && $stop){
-				$put_file = CACHE_STORE . self::cache_token();
-				$cache = ob_get_flush();
-				
-				if(!file_exists($put_file)){
-				// compressing output doesn't seem to make the files drastically smaller
-					if(COMPRESS_OUTPUT) $cache =  preg_replace("/\r?\n/m", "",$cache);
-						file_put_contents("$put_file", $cache);
-					}
-				}
-			elseif(CACHE_QUERY != true){
-				ob_end_flush();
-				if($stop!= NULL ) ob_start();	
-			}elseif($_POST && CACHE_QUERY == TRUE){
-				$cache_token = CACHE_STORE.self::cache_token();
-				if(file_exists($cache_token)){
-					$this->cache = 1;
-					echo file_get_contents($cache_token);
-					// tell the rest of the object to not render!
-					return true;
-					}
-			}
-		}
-	}
+
 
 	function sxmle_to_obj($xml){
 		$result = $xml->xpath('conceptProperties|name');
@@ -261,23 +231,7 @@ class rxNormRef{
 		if(is_a($xml,'SimpleXMLElement')){
 		
 		// this needs to be done better.... shows up if no rows are returned... should attempt to count the number of simpleXML elements ...
-			echo "
-	<div id='led'>			
-		<ul> 			
-			<li class='record_rxcui'>RXCUI</li> 
-		</ul> 
-		<ul> 
-			<li class='record_name'>Name</li> 
-		</ul> 
-		<ul> 
-			<li class='record_synonym'>Synonym</li> 
-		</ul> 
-		<ul> 
-			<li class='record_umlscui'>UMLSCUI</li> 
-		</ul> 
-			
-			</div>";
-		
+	
 		
 		foreach($xml as $value){
 		// second row avoids displaying the parameter name for subsequent rows
@@ -303,7 +257,7 @@ class rxNormRef{
 		}
 		unset($xml);
 		unset($result);
-		self::ob_cacher();
+		//obcer::ob_cacher();
 	}
 	
 	function show_row($rowData){
@@ -319,32 +273,11 @@ class rxNormRef{
 						$return .= "\n\t". '<li class="record_'.$key.'">'. ($key=='umlscui' && $value ==''?'n/a':$value) . "</li>"; 
 					}
 				}
-				//($key=='rxcui'?"<hr>":NULL) .
 		}
 		return "\n\t<ul>\n\t\t$return\n\t\t</ul>\n";
 	}
 	
-	function stats(){
-		switch ($this->cache) {
-		default:
-			;
-			break;
-		case 1:
-			$cache = '<p>Rendering from cached HTML (file_get_contents)';
-			break;
-		case 2:
-			$cache = '<p>Rendering from cached XML (as url)';
-			break;
-		case 3:
-			$cache = '<p>Rendering from cached XML (file_get_contents)';
-			break;
-		}
 
-		return $cache .
-			"<em>Memory use: " . round(memory_get_usage() / 1024) . 'k'. "</em></p> <p><em>Load time : "
-	. sprintf("%.4f", (((float) array_sum(explode(' ',microtime())))-$this->start_time)) . " seconds</em></p><p><em>Overhead memory : ".$this->oh_memory." k</em></p>";
-
-	}
 }
  new RxNormRef;
 
