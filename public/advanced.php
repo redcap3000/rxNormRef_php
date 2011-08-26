@@ -112,8 +112,6 @@
         </div>
 		<div id ='content'>";
 
-
-
  if(!$_POST['searchTerm']){
          if($_GET['u'])
                 $_POST['u'] = $_GET['u'];
@@ -123,11 +121,15 @@
 
 
 if($_POST['searchTerm'] || $_GET['r'] || $_GET['u']){
+		
+if($_POST['id_lookup'] == '') unset($_POST['id_lookup']);
         //if someone checks all the boxes it is the same as checking none of them
         if($_POST['related'] && count($_POST['related']) == 13) unset($_POST['related']);
         if($_POST['id_lookup'] && $_POST['extra'] != '') unset ($_POST['extra']);
-	require("../lib/rxNormRef.php"); 
-
+        
+ 	require("../config.php");
+	require("../lib/obcer.php");
+	include("../lib/rxNormRef.php");
 }
 
 ?>
