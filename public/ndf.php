@@ -19,6 +19,10 @@ if($_POST['property'] != '' ||$_POST['role'] != ''|| $_POST['association'] != ''
 	if($_POST['nui_a'] !='')unset($_POST['property'],$_POST['association'],$_POST['role']);
 }
 
+if($_GET['n']){
+	$_POST['nui']=$_GET['n'];
+}
+
 function html_form($type,$array,$id,$label=true,$legend=true,$blank_item=true,$fieldset=true,$inner_container=NULL){
 // could ditch the type specification and assume that if not provided we are making a checkbox, but if we want to handle other variables
 // we'll have to do something else to tell it its not a checkbox value
