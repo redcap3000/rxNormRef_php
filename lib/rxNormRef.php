@@ -77,7 +77,7 @@ class rxNormRef{
 	}
 	function build_concept($value,$c_name,$c_nui){
 
-		return '<li class="'.$value.'"><ul><li class="conceptName">'. strtolower($c_name) . '</li><li class="conceptNui">'.$c_nui. "</li>\n";
+		return '<li class="'.$value.'"><ul><li class="conceptName">'. strtolower($c_name) . '</li><li class="nui"><a href="?n='.$c_nui. '">'. $c_nui. "</a></li>\n";
 	}
 
 	function post_check(){
@@ -102,7 +102,7 @@ class rxNormRef{
 											elseif($key4=='conceptNui') $p_concept_nui = $value4;
 											elseif($key4=='conceptKind')
 												echo self::build_concept($value4,$p_concept_name,$p_concept_nui);
-												//echo '<li class="'.$value4.'"><ul><li class="conceptName">'. $p_concept_name . '</li><li class="conceptNui">'.$p_concept_nui. "</li>\n";
+												//echo '<li class="'.$value4.'"><ul><li class="conceptName">'. $p_concept_name . '</li><li class="nui">'.$p_concept_nui. "</li>\n";
 										echo '</ul></li>';
 									}
 								}elseif($key2 == 'childConcepts'){
@@ -116,7 +116,7 @@ class rxNormRef{
 											elseif($key5=='conceptNui') $c_concept_nui = $value5;
 											elseif($key5=='conceptKind' && $value5 !='')
 												//echo self::build_concept($value5,$c_concept_name,$c_concept_nui);
-												$result .= '<li><ul><li class="'.$value5.'">'. $c_concept_name . '</li><li class="nui">'.$c_concept_nui. "</li></ul></li>\n";
+												$result .= '<li><ul><li class="'.$value5.'">'. $c_concept_name . '</li><li class="nui"><a href="'."?n=$c_concept_nui".'">'.$c_concept_nui. "</a></li></ul></li>\n";
 									
 									}
 									if($result)echo "<li class='a_title'>Child Concepts</li>\n\n".	 $result;
@@ -125,10 +125,16 @@ class rxNormRef{
 								}elseif($key2 == 'groupProperties'){
 									echo '<li class="a_title">Group Properties</li>';
 									foreach($value2 as $item)
-										foreach($item as $p_name=>$p_value)
+										foreach($item as $p_name=>$p_value){
+											unset($link);
 											if($p_name == 'propertyName') $the_name = $p_value;
-											elseif($p_value != '')
-												echo "\n<li>\n<ul>\n<li class='$p_name'>".str_replace('_',' ',$the_name)." </li>\n<li> $p_value</li>\n</ul>\n</li>";
+											elseif($p_value != ''){
+											// these links need to be done better... all my paths need to be done better...
+											// group 'MESH' attributes
+												if($the_name=='RxNorm_CUI' || $the_name =='UMLS_CUI') $link = "../public/?".($the_name=='RxNorm_CUI'?'r':'u')."=$p_value";
+												echo "\n<li>\n<ul>\n<li class='$p_name'>".str_replace('_',' ',$the_name)." </li>\n<li>".($link?"<a href='$link'> $p_value</a>":$p_value)."</li>\n</ul>\n</li>";
+												}
+										}
 								}elseif($key2 == 'groupRoles'){
 									echo '<li class="a_title">Group Roles</li>';
 									//print_r($value2[0]);
@@ -143,7 +149,7 @@ class rxNormRef{
 													if($roles_inner_key == 'conceptName') $roles_concept_name = $roles_inner_value;
 													elseif($roles_inner_key == 'conceptNui') $roles_nui = $roles_inner_value;
 													else
-														echo "<li><ul><li class='$roles_inner_value'>$master_role $roles_concept_name</li><li class='nui'>$roles_nui</li></ul></li>";
+														echo "<li><ul><li class='$roles_inner_value'>$master_role $roles_concept_name</li><li class='nui'><a href='?n=$roles_nui'>$roles_nui</a></li></ul></li>";
 												
 											}else
 												$master_role = str_replace('_',' ',$roles2);
