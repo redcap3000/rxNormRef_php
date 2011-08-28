@@ -85,9 +85,13 @@ class rxNormRef{
 				self::loadNdf();
 				// default to showing all info
 				// the result to cache (xml) is the result!!
+				// do a obcacher check to see if we cant get the XML back and avoid making the ndfApi call
+				// write something to rewrite the xml files in a better (smaller) format, or store in database - or both.
+				// ideally tab/space delimited would probably be best
 					$result = new SimpleXMLElement($this->ndfApi->getAllInfo($_POST['nui']));	
 					//print_r($result);	
 					//echo "\n<ul>";
+					// to do reverse order of this stuff....
 					foreach($result as $key=>$value){
 						if($key=='fullConcept'){
 					
@@ -115,15 +119,14 @@ class rxNormRef{
 											if($key5=='conceptName') $c_concept_name = $value5;
 											elseif($key5=='conceptNui') $c_concept_nui = $value5;
 											elseif($key5=='conceptKind' && $value5 !='')
-												//echo self::build_concept($value5,$c_concept_name,$c_concept_nui);
-												$result .= '<li><ul><li class="'.$value5.'">'. $c_concept_name . '</li><li class="nui"><a href="'."?n=$c_concept_nui".'">'.$c_concept_nui. "</a></li></ul></li>\n";
+												$result.= self::build_concept($value5,$c_concept_name,$c_concept_nui). "</ul>\n";
 									
 									}
-									if($result)echo "<li class='a_title'>Child Concepts</li>\n\n".	 $result;
+									if($result)echo "<li class='a_title'>Child Concepts</li>\n\n".	 $result . '</li><li>';
 									
 									
 								}elseif($key2 == 'groupProperties'){
-									echo '<li class="a_title">Group Properties</li>';
+									unset($result);
 									foreach($value2 as $item)
 										foreach($item as $p_name=>$p_value){
 											unset($link);
@@ -132,11 +135,14 @@ class rxNormRef{
 											// these links need to be done better... all my paths need to be done better...
 											// group 'MESH' attributes
 												if($the_name=='RxNorm_CUI' || $the_name =='UMLS_CUI') $link = "../public/?".($the_name=='RxNorm_CUI'?'r':'u')."=$p_value";
-												echo "\n<li>\n<ul>\n<li class='$p_name'>".str_replace('_',' ',$the_name)." </li>\n<li>".($link?"<a href='$link'> $p_value</a>":$p_value)."</li>\n</ul>\n</li>";
+												$result .= "\n<li>\n<ul>\n<li class='$p_name'>".str_replace('_',' ',$the_name)." </li>\n<li>".($link?"<a href='$link'> $p_value</a>":$p_value)."</li>\n</ul>\n</li>";
 												}
+												
 										}
+									if($result)echo '<li class="a_title">Group Properties</li>' . $result;	
 								}elseif($key2 == 'groupRoles'){
-									echo '<li class="a_title">Group Roles</li>';
+									unset($result);
+									
 									//print_r($value2[0]);
 									foreach($value2 as $roles)
 										foreach($roles as $roleName=>$roles2)
@@ -149,12 +155,14 @@ class rxNormRef{
 													if($roles_inner_key == 'conceptName') $roles_concept_name = $roles_inner_value;
 													elseif($roles_inner_key == 'conceptNui') $roles_nui = $roles_inner_value;
 													else
-														echo "<li><ul><li class='$roles_inner_value'>$master_role $roles_concept_name</li><li class='nui'><a href='?n=$roles_nui'>$roles_nui</a></li></ul></li>";
+														$result .= "<li><ul><li class='$roles_inner_value'>$master_role $roles_concept_name</li><li class='nui'><a href='?n=$roles_nui'>$roles_nui</a></li></ul></li>";
 												
 											}else
 												$master_role = str_replace('_',' ',$roles2);
 												//echo "<li class='$roleName'>$roles2</li>";
-									echo '</ul>';
+									
+									if($result)
+										echo '<li class="a_title">Group Roles</li>' . $result. '</ul>';
 
 								}
 								
