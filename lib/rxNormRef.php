@@ -9,13 +9,25 @@ class rxNormRef{
 			'TMSY'=>'Term Type','BPCK'=>'Brand Name Pack','GPCK'=>'Generic Pack');
 
 
+// should load one or the other based on what the post directive is or could pass a param via construct method to
+// specify that its an ndfRT call ?
+
 	function loadRxNorm(){
+		if(!class_exists('APIBaseClass')) require 'APIBaseClass.php';	
 		if(!class_exists('rxNormApi')){
-				require 'APIBaseClass.php';
 				require 'rxNormApi.php';
 				$this->api = new rxNormApi;	
 			}
 	}
+	
+	function loadNdf(){
+		if(!class_exists('APIBaseClass')) require 'APIBaseClass.php';
+			if(!class_exists('ndfRTApi')){
+				require 'ndfRTApi.php';
+				$this->ndfApi = new ndfRTApi;
+			}
+	}
+	
 	function __construct(){
 		$this->start_time = (float) array_sum(explode(' ',microtime()));
 		$this->oh_memory = round(memory_get_usage() / 1024);
@@ -49,9 +61,7 @@ class rxNormRef{
 		echo '<div id="stats">' . $this->stats().'</div>';
 
 	}
-	
-	
-	
+
 	function stats(){
 		switch ($this->cache) {
 		default:;break;
@@ -65,45 +75,220 @@ class rxNormRef{
 	. sprintf("%.4f", (((float) array_sum(explode(' ',microtime())))-$this->start_time)) . " seconds</em></p><p><em>Overhead memory : ".$this->oh_memory." k</em></p>";
 
 	}
-	
+	function build_concept($value,$c_name,$c_nui){
 
-		function post_check(){
-	// idea why not use relatedBy and allow for lookup by id in the same form?
-		if(count($_POST) > 1)
-			foreach($_POST as $key=>$value){
-				if($key == 'relatedBy' && is_array($value)){
-					unset($_POST['related']);
-					$formatted= implode('+',$_POST['relatedBy']);
+		return '<li class="'.$value.'"><ul><li class="conceptName">'. strtolower($c_name) . '</li><li class="conceptNui">'.$c_nui. "</li>\n";
+	}
+
+	function post_check(){
+		if($_POST['nui']){
+				self::loadNdf();
+				// default to showing all info
+				// the result to cache (xml) is the result!!
+					$result = new SimpleXMLElement($this->ndfApi->getAllInfo($_POST['nui']));	
+					//print_r($result);
+					foreach($result as $key=>$value){
+						if($key=='fullConcept'){
+						echo "\n<ul>";
+						//	echo "\n\t<li>Full Concept</li>\n";	
+							foreach($value as $key2=>$value2){	
+								if($key2 == 'parentConcepts'){
+									echo '<li><ul><li class="a_title">Parent Concepts</li>' . "\n";
+									foreach($value2 as $key3=>$value3){
+										foreach($value3 as $key4=>$value4)
+										// turn this into a 'concept' function ...
+											if($key4=='conceptName') $p_concept_name = $value4;
+											elseif($key4=='conceptNui') $p_concept_nui = $value4;
+											elseif($key4=='conceptKind')
+												echo self::build_concept($value4,$p_concept_name,$p_concept_nui);
+												//echo '<li class="'.$value4.'"><ul><li class="conceptName">'. $p_concept_name . '</li><li class="conceptNui">'.$p_concept_nui. "</li>\n";
+										echo '</ul></li>';
+									}
+								}elseif($key2 == 'childConcepts'){
+									//echo 
+									if($value2 != '');
+									foreach($value2 as $array){
+										unset($temp);
+										unset($result);
+										foreach($array as $key5 =>$value5)
+											if($key5=='conceptName') $c_concept_name = $value5;
+											elseif($key5=='conceptNui') $c_concept_nui = $value5;
+											elseif($key5=='conceptKind' && $value5 !='')
+												//echo self::build_concept($value5,$c_concept_name,$c_concept_nui);
+												$result = '<li class="'.$value5.'"><ul><li class="conceptName">'. $c_concept_name . '</li><li class="conceptNui">'.$c_concept_nui. "</li></ul>\n";
+									
+									}
+									if($result)echo "<li class='a_title'>Child Concepts</li><li><ul>\n\n".	 $result.'</ul></li>';
+									
+									
+								}elseif($key2 == 'groupProperties'){
+									echo '<li class="a_title">Group Properties</li>';
+									foreach($value2 as $item)
+										foreach($item as $p_name=>$p_value)
+											if($p_name == 'propertyName') $the_name = $p_value;
+											elseif($p_value != '')
+												echo "\n<li>\n<ul>\n<li class='$p_name'>".str_replace('_',' ',$the_name)." </li>\n<li> $p_value</li>\n</ul>\n</li>";
+								}elseif($key2 == 'groupRoles'){
+									echo '<li class="a_title">Group Roles</li>';
+									//print_r($value2[0]);
+									foreach($value2 as $roles)
+										foreach($roles as $roleName=>$roles2)
+											if($roleName == 'concept'){
+												//echo "<li class='a_title'>Concept</li>";
+												$roles_concept_name = '';
+												$roles_inner_value = '';
+												
+												foreach($roles2 as $roles_inner_key =>$roles_inner_value)
+													if($roles_inner_key == 'conceptName') $roles_concept_name = $roles_inner_value;
+													elseif($roles_inner_key == 'conceptNui') $roles_nui = $roles_inner_value;
+													else
+														echo "<li><ul><li class='$roles_inner_value'>$master_role $roles_concept_name</li><li class='nui'>$roles_nui</li></ul></li>";
+												
+											}else
+												$master_role = str_replace('_',' ',$roles2);
+												//echo "<li class='$roleName'>$roles2</li>";
+									echo '</ul>';
+
+								}
+								
+							}
+						}
+						
+					
 					}
-				if($key == 'related' && is_array($value))
-					$formatted= implode('+',$_POST['related']);
-				if($key == 'searchTerm')
-					$_POST['searchTerm']=trim($_POST['searchTerm']);
-				if($key == 'extra' && is_array($value))
-					foreach($extra as $value2)
-						$extras[]= $value2;
+				
 				}
-
-	
-	//	if(obcer::ob_cacher() == TRUE) return 0;
-		$cached=obcer::ob_cacher();
-		switch($cached){
 		
-			case true:
-			// stop processing the rest of the page if HTML cache is encountered
-			return 0;
-			case 0:
-			// Handle XML processing here ...
-			;
-			break;
+	// idea why not use relatedBy and allow for lookup by id in the same form?
+	// these are for array processing..
+		
+		
+		// form objects to make ... 'ndf' is a list of the available ID types (radio names are verbose, values are what is passed into the api library)
+		// also allow link for specific value types in the rxNorm api to jump to (find interactions ?)
+	//	$_POST['ndf'] = 'RXCUI';
+	//	$_POST['r'] = '36567';
+
+		if(($_POST['ndf'] && ($_POST['r'] || $_POST['u'])) || $_POST['nui'] != ''){
+		//print_r($_POST);
+		// load ndf ??
+		if($_POST['nui'] != '')$nui2 = $_POST['nui'];
+		
+		// di is drug interaction could be set to a single radio value to specify the type of ID to lookup, 
+		// add as a get link on render pages
+			
+		if($_POST['ndf'])	{
+			switch ($_POST['ndf']) {
+				case "RXCUI":
+					$byID = $_POST['r'];
+					break;
+				case "UMLSCUI":
+					$byID = $_POST['u'];
+					break;
+				case "default":
+					;
+					break;	
+			}
+			
+			if($byID){
+				self::loadNdf();
+				$nui = $this->ndfApi->findConceptsByID( $_POST['ndf'], $byID );
+				$nui = new SimpleXMLElement($nui);
+				foreach($nui->groupConcepts->concept as $inner)
+					if($inner->conceptKind == 'DRUG_KIND' && !$nui2)
+						$nui2= $inner->conceptNui;
+		
+
+			}
+				// may need to make into xml element and select the id before passing it into drug interactions
+				
+			// need to be careful to not give it an improper value if a scope is not specified but we still need to tell it to find
+			// interactions with the nui (if we have one) like a checkbox for 'di' and then a radio button for the scope ? or the default is set to 3
+			// and we can be verbose with the html form
+			
+			// POST di is a radio value that if not selected shouldn't be sent in the post form...
+			// these may all need to be ported from a GET variable, shorten names ...
+			// 1 INGREDIENT_KIND
+			
+			// code a general 'transitive' radio button that is set to default
+			
+			if($nui2 && $_POST['nuiAction']){
+				switch ($_POST['nuiAction']) {
+					case 1:
+					//getAllInfo
+						$result = $this->NdfApi->getAllInfo($nui2);
+						;
+						break;
+					case 2:
+					//getChildConcepts nui,transitive
+						$result = $this->NdfApi->getChildConcepts($nui2);
+
+						;
+						break;
+					case 3:
+					// TO DO
+					//getConceptProperties
+					//nui, propName
+						;
+						break;
+					case 4:
+					// getParentConcepts
+					// nui, transitive
+						$result = $this->NdfApi->getParentConcepts($nui2);
+						break;
+					case 5:
+					// getRelatedConceptsByRole
+					// nui, roleName (getRoleList()), transitive
+						;
+						break;
+					case 6:
+					//getRelatedConceptsByReverseRole( nui, roleName, transitive )
+						;
+						break;	
+						
+					case 7:
+					//getRelatedConceptsByAssociation( nui, assocName )
+						;
+						break;
+						
+					case 8:
+					//getVaClassOfConcept( nui )
+						;
+						break;	
+						
+				}
+				}
+			elseif($nui2 && $_POST['di']){
+				// eventually allow a di value to be any other drug value ? allow searching
+				// for both values in a sort of 'wizard' drug selector	
+				// make a link for available urls to do 'drug interactions' on ?
+				// store interacting NUI's ??
+				$this->ndfApi->findDrugInteractions( $nui , $_POST['di'] );
+
+				}
+			elseif($_POST['nui']){
+				self::loadNdf();
+				// default to showing all info
+					$result = $this->NdfApi->getAllInfo($_POST['nui']);
+				}
+				}
 		
 		}
-	
-		if(($_POST['searchTerm'] || $_POST['r'] || $_POST['u']) && !$cached ) {
-	
-			// look up inside of defined cache location
-				
+		
+		if(count($_POST) > 1)
+			$a_post = array_intersect_key($_POST,array('relatedBy'=>'','related'=>'','extra'=>''));
+		
+		if(is_array($a_post))	
+		// you probably dont need a foreach here ... could reduce it to one array value... in actuality this value is only 'extra' for now..
+			foreach($a_post as $key=>$value)
+				if(is_array($value))
+					$formatted= implode('+',$_POST[$key]);
+					
 
+		$cached=obcer::ob_cacher();
+		if($cached == TRUE) return 0;
+
+		if(($_POST['searchTerm'] || $_POST['r'] || $_POST['u']) && !$cached ) {
+			// look up inside of defined cache location
 				if($_POST['id_lookup'] || $_POST['u'] ){
 					$lookup = $_POST['searchTerm'];
 					
@@ -214,10 +399,6 @@ class rxNormRef{
 	return		($key!='tty' ? "\n\t\t\t<li class='record_".(self::$normalElements[strtoupper($key)]?self::$normalElements[strtoupper($key)]:$key)."'>".
 				(self::$normalElements[strtoupper($value)]?self::$normalElements[strtoupper($value)]:$value)."</li>":NULL);
 	}
-
-
-
-
 	function sxmle_to_obj($xml){
 		$result = $xml->xpath('conceptProperties|name');
 		foreach($result as $object){
