@@ -96,7 +96,6 @@ margin-right: 1.25em;
 
 ul{
 	list-style-type: none;margin: 0;padding: 0;
-
 }
 
 #nui fieldset {
@@ -139,7 +138,7 @@ float: left;
 
 
 li.propertyValue {width: 7em;
-	border-right: solid .25em maroon;padding: 0 .48em;text-align: center;
+	border-right: solid .25em maroon;padding: 0 .48em;text-align: right;
 	font-style: bold;color: maroon;
 }
 
@@ -167,11 +166,11 @@ va_file,va_ien {
 
 
 #ndf_content ul li ul li{
-	float: left;
+	float: left;width: 6.5em;
 }
 
 #ndf_content ul li.conceptName {
-	width: 15em;
+	width: 18.5em;
 }
 
 
@@ -225,7 +224,7 @@ va_file,va_ien {
 }
 
 .record_name {
-	clear: both;min-height: 3em;padding: .45em;text-align: center;
+	clear: both;min-height: 3em;padding: .45em;text-align: right;
 	letter-spacing: .09em;width: 18.3em;
 	font-weight: bold;
 }
