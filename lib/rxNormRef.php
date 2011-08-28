@@ -86,14 +86,15 @@ class rxNormRef{
 				// default to showing all info
 				// the result to cache (xml) is the result!!
 					$result = new SimpleXMLElement($this->ndfApi->getAllInfo($_POST['nui']));	
-					//print_r($result);
+					//print_r($result);	
+					//echo "\n<ul>";
 					foreach($result as $key=>$value){
 						if($key=='fullConcept'){
-						echo "\n<ul>";
+					
 						//	echo "\n\t<li>Full Concept</li>\n";	
 							foreach($value as $key2=>$value2){	
 								if($key2 == 'parentConcepts'){
-									echo '<li><ul><li class="a_title">Parent Concepts</li>' . "\n";
+									echo '<ul><li class="a_title">Parent Concepts</li>' . "\n";
 									foreach($value2 as $key3=>$value3){
 										foreach($value3 as $key4=>$value4)
 										// turn this into a 'concept' function ...
@@ -106,19 +107,19 @@ class rxNormRef{
 									}
 								}elseif($key2 == 'childConcepts'){
 									//echo 
+										unset($result);
 									if($value2 != '');
 									foreach($value2 as $array){
 										unset($temp);
-										unset($result);
 										foreach($array as $key5 =>$value5)
 											if($key5=='conceptName') $c_concept_name = $value5;
 											elseif($key5=='conceptNui') $c_concept_nui = $value5;
 											elseif($key5=='conceptKind' && $value5 !='')
 												//echo self::build_concept($value5,$c_concept_name,$c_concept_nui);
-												$result = '<li class="'.$value5.'"><ul><li class="conceptName">'. $c_concept_name . '</li><li class="conceptNui">'.$c_concept_nui. "</li></ul>\n";
+												$result .= '<li><ul><li class="'.$value5.'">'. $c_concept_name . '</li><li class="nui">'.$c_concept_nui. "</li></ul></li>\n";
 									
 									}
-									if($result)echo "<li class='a_title'>Child Concepts</li><li><ul>\n\n".	 $result.'</ul></li>';
+									if($result)echo "<li class='a_title'>Child Concepts</li>\n\n".	 $result;
 									
 									
 								}elseif($key2 == 'groupProperties'){
