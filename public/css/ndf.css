@@ -1,0 +1,261 @@
+html{
+	font-family: Arial, san-serif;
+}
+
+#header{
+	padding: 20px 0;
+	height: auto;
+}
+
+#header h1{
+	color: maroon;
+	font-weight: bold;
+	font-style: italic;
+	font-size: 2.5em;
+}
+
+#header form.main_form fieldset ul {
+	float: left;margin-top: -3.75em;width: 8em;
+}
+
+#header form.main_form fieldset ul li {
+	width: 15em;float: left;
+}
+
+a{
+	text-decoration: none;
+}
+
+a:hover{
+	text-decoration: underline;
+}
+
+#id_types a{
+	padding: .5em 0;
+	float:left;
+}
+
+#simple_form a {
+	padding-left: 4em;
+	margin-top: .75em;
+}
+
+#help em{
+	font-size: 1.2em;
+	font-style: normal;
+	font-weight: bold;
+	text-align: center;
+}
+
+#header form.main_form {
+	margin-top: -4em;
+	width: 52em;
+	margin-left: 8em;
+}
+
+
+
+fieldset#nui{
+}
+
+fieldset#nui_opt{
+	width: 27em;
+}
+
+fieldset#nui_opt,fieldset#nui,#header form.main_form fieldset {
+	border: none;;
+}
+
+fieldset#scope {margin: 0;padding: 0;
+width: 18em;float: left;margin-left: .25em;}
+
+fieldset#scope label,fieldset#scope input#scope_1{
+padding: .25em .25em;
+	position: relative;
+	top: .25em;
+}
+
+#scope legend,#nui_opt legend{
+clear: left;
+float: left;border-right: solid maroon .24em;margin: .25em 0;
+padding-right: 1.25em;
+margin-right: 1.25em;
+}
+
+
+
+
+#page {
+	margin: 1em auto ;
+	width: 60em;
+}
+
+ul{
+	list-style-type: none;margin: 0;padding: 0;
+
+}
+
+#nui fieldset {
+	border: none;width: 58em;
+}
+
+#nui label {	padding-left: .45em;
+	margin-bottom: -2.55em;
+}
+
+
+	
+img.bg_black{
+	background-color: blue;
+}
+
+
+#ndf_content{
+	float: left;
+	clear: Both;
+}
+
+
+
+#ndf_content ul li ul ul {
+	float: left;width: 19em;
+	border: solid black 1px;
+}
+
+
+#ndf_content ul li {margin: .25em;
+
+float: left;
+}
+
+#ndf_content ul li.MECHANISM_OF_ACTION_KIND,#ndf_content ul li.PHYSIOLOGIC_EFFECT_KIND,#ndf_content ul li.DISEASE_KIND,#ndf_content ul li.INGREDIENT_KIND {
+	text-align: center;width: 97%;
+}
+
+#ndf_content ul li ul li  {
+	
+}
+
+li.propertyValue {
+	border-right: solid .25em maroon;
+}
+
+va_file,va_ien {
+	clear: both;float: left;
+	display: none;
+}
+
+#ndf_content ul li ul li ul li {
+	width: auto;
+}
+
+#ndf_content ul li ul li ul li.propertyValue {
+	width: 8em;
+	text-align: center;color: maroon;
+}
+
+#ndf_content li.nui {
+	border-top: solid maroon 2px;
+	width: 98%;
+	color: orangered;float: right;
+	padding-top: .25em;
+	text-align: right;
+}
+
+.a_title {font-size: 1.5em;padding: .8em 0 .3em 0  ;
+	width: 100%;clear: both;
+	margin-bottom: .44em;
+	border-bottom: solid maroon .35em;
+}
+
+
+
+
+
+
+
+.property{
+	clear: both;
+	color: maroon;
+	float: left;
+	width: 31.6em;
+	font-weight: bold;
+	text-align: left;
+	font-size: 1.9em;
+	padding: .75em 0 .25em 0;
+	border: none;
+	}
+
+.record_rxcui{
+	font-weight: bold;
+	font-family: "Courier New", Courier, mono;
+	padding: .4em .55em;margin: 0;
+	width: 18.05em;
+	margin-bottom: .5em;
+	letter-spacing: .14em;background-color: lightgray;
+	z-index: -2;
+}
+
+.record_umlscui {
+	font-weight: bold;
+	float: right;
+	text-align: right;
+	width: 18.15em;
+	padding:  .3em .5em;
+	letter-spacing: .11em;
+	margin-top: .75em;
+	background-color: gray;
+}
+
+.record_umlscui a{
+	color: white;
+}
+
+.record_name {
+	clear: both;min-height: 3em;padding: .45em;text-align: center;
+	letter-spacing: .09em;width: 18.3em;
+	font-weight: bold;
+}
+
+
+.record_synonym{
+	font-size: .98em;
+	line-height: .99em;
+	text-align: center;
+	width: 18.8em;
+	padding: .4em;
+	font-style: italic;
+}
+
+#help {
+	width: 60em;
+	border-top: solid maroon .25em;
+	float: left;
+
+}
+
+#help ul li {
+	width: 45%;float: left;
+padding: 1.5em;
+}
+
+#help img{
+	float: left;margin: 10px 10px 80px 10px;
+}
+
+#help ul li a{
+	text-align:center; width: 100%;
+}
+
+#stats {
+	display:none;
+}
+
+#led {display: none;
+	height: 1.5em;
+width: auto;
+}
+
+#led ul {
+	border: none;width: 6em;
+}
