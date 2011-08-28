@@ -1,3 +1,7 @@
+/* @override http://myparse.net/sb4/rxNormRef_php/public/css/ndf.css */
+
+
+
 html{
 	font-family: Arial, san-serif;
 }
@@ -117,7 +121,7 @@ img.bg_black{
 
 
 
-#ndf_content ul li ul ul {
+#ndf_content ul li ul {
 	float: left;width: 19em;
 	border: solid black 1px;
 }
@@ -132,12 +136,11 @@ float: left;
 	text-align: center;width: 97%;
 }
 
-#ndf_content ul li ul li  {
-	
-}
 
-li.propertyValue {
-	border-right: solid .25em maroon;
+
+li.propertyValue {width: 7em;
+	border-right: solid .25em maroon;padding: 0 .48em;text-align: center;
+	font-style: bold;color: maroon;
 }
 
 va_file,va_ien {
@@ -162,13 +165,23 @@ va_file,va_ien {
 	text-align: right;
 }
 
-.a_title {font-size: 1.5em;padding: .8em 0 .3em 0  ;
-	width: 100%;clear: both;
-	margin-bottom: .44em;
-	border-bottom: solid maroon .35em;
+
+#ndf_content ul li ul li{
+	float: left;
+}
+
+#ndf_content ul li.conceptName {
+	width: 15em;
 }
 
 
+
+.a_title {font-size: 1.5em;padding: .8em 0 .3em 0  ;
+	width: 100%;
+	clear: both;
+	margin-bottom: .44em;
+	border-bottom: solid maroon .35em;
+}
 
 
 
