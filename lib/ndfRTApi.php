@@ -6,6 +6,18 @@ class ndfRTApi extends APIBaseClass{
 
 	public static $api_url = 'http://rxnav.nlm.nih.gov/REST/Ndfrt';
 
+   public function _request($path,$method,$data=NULL){
+			if ($this->output_type == 'json')
+					return parent::_request($path,$method,$data,"Accept:application/json");
+			else
+					return parent::_request($path,$method,$data,"Accept:application/xml");
+	}
+
+
+    public function setOutputType($type){
+                if($type != $this->output_type)
+                        $this->output_type = ($type != 'xml'?'json':'xml');
+        }
 	public function __construct($url=NULL)
 	{
 		parent::new_request(($url?$url:self::$api_url));
