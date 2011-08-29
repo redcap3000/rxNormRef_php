@@ -33,7 +33,7 @@ echo
   }
  if($_POST['searchTerm'] || $_GET['r'] || $_GET['u']) {
  	
- 	require("../lib/config.php");
+ 	require("../config.php");
 	require("../lib/obcer.php");
  //	obcer::ob_cacher();
  	
