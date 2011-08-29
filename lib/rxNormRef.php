@@ -68,6 +68,7 @@ class rxNormRef{
 		case 1:$cache = '<p>Rendering from cached HTML (file_get_contents)';break;
 		case 2:$cache = '<p>Rendering from cached XML (as url)';break;
 		case 3:$cache = '<p>Rendering from cached XML (file_get_contents)';break;
+		case 4:$cache = '<p>Rendering from Couch Database</p>'; break;
 		}
 
 		return $cache .
@@ -76,7 +77,6 @@ class rxNormRef{
 
 	}
 	function build_concept($value,$c_name,$c_nui){
-
 		return '<li class="'.$value.'"><ul><li class="conceptName">'. strtolower($c_name) . '</li><li class="nui"><a href="?n='.$c_nui. '">'. $c_nui. "</a></li>\n";
 	}
 
@@ -89,13 +89,9 @@ class rxNormRef{
 				// write something to rewrite the xml files in a better (smaller) format, or store in database - or both.
 				// ideally tab/space delimited would probably be best
 					$result = new SimpleXMLElement($this->ndfApi->getAllInfo($_POST['nui']));	
-					//print_r($result);	
-					//echo "\n<ul>";
 					// to do reverse order of this stuff....
 					foreach($result as $key=>$value){
 						if($key=='fullConcept'){
-					
-						//	echo "\n\t<li>Full Concept</li>\n";	
 							foreach($value as $key2=>$value2){	
 								if($key2 == 'parentConcepts'){
 									echo '<ul><li class="a_title">Parent Concepts</li>' . "\n";
@@ -180,12 +176,9 @@ class rxNormRef{
 		
 		// form objects to make ... 'ndf' is a list of the available ID types (radio names are verbose, values are what is passed into the api library)
 		// also allow link for specific value types in the rxNorm api to jump to (find interactions ?)
-	//	$_POST['ndf'] = 'RXCUI';
-	//	$_POST['r'] = '36567';
 
 		if(($_POST['ndf'] && ($_POST['r'] || $_POST['u'])) || $_POST['nui'] != ''){
-		//print_r($_POST);
-		// load ndf ??
+
 		if($_POST['nui'] != '')$nui2 = $_POST['nui'];
 		
 		// di is drug interaction could be set to a single radio value to specify the type of ID to lookup, 
@@ -297,7 +290,6 @@ class rxNormRef{
 			foreach($a_post as $key=>$value)
 				if(is_array($value))
 					$formatted= implode('+',$_POST[$key]);
-					
 
 		$cached=obcer::ob_cacher();
 		if($cached == TRUE) return 0;
@@ -349,10 +341,10 @@ class rxNormRef{
 					}
 				}elseif($_POST['r'])
 					$id= trim($_POST['r']);
-				
 				// Now we get the actual syntax to return the real xml object
 				if($id)
 						$xml = self::make_xml($id,$formatted);
+						
 				// Modify output slightly to use filters if provided	
 				if($formatted){
 					// this is still in testing phases - for the relationship checker- returns raw object for now
@@ -364,19 +356,38 @@ class rxNormRef{
 				else
 					self::list_2d_xmle($xml->allRelatedGroup->conceptGroup);
 				}
-			
 	}
 	
 	function make_xml($id,$formatted=false){
 	// could check post here to see if cache_xml enabled and to return that instead of loading anything ...
 	// switches between several rxnorm api function calls to make the interface more accessible.
 	// add case of 'extra' .. not sure what to store .. and how to recall it properly may need additional rewriting to cache properly...
-		if(CACHE_XML){
+		if(COUCH && $_POST){
+		// check if it already exists first ...
+			$couch_token = obcer::cache_token('db');
+			$exec_line = "curl -X GET " . COUCH_HOST . "/" . COUCH_DB . "/$couch_token";echo $exec_line;
+			$tester = exec($exec_line);
+			if($tester =='{"error":"not_found","reason":"missing"}'){
+				self::loadRxNorm();
+				//echo 'help me!';
+				unset($this->cache);
+				}
+			else{
+			
+				$this->cache =4;
+				$xml=json_decode($tester);
+			}
+		}
+		if(COUCH && !$this->cache){
+			$this->api->setOutputType('json');
+				
+		
+			}
+	if(CACHE_XML){
 			$x_token = obcer::cache_token();
 			$put_file = SERVER_ROOT . XML_STORE . $x_token;
 
 			if(file_exists($put_file)){
-			
 			// get file ?? pull in xml file as URL if it exisists...
 				if(XML_URL_ACCESS){
 						$xml=new SimpleXMLElement(BASE_URL.XML_STORE.$x_token,0,true);
@@ -384,36 +395,34 @@ class rxNormRef{
 					}
 				else{	
 						$xml=file_get_contents($put_file);
-						//echo print_r($xml);
 						$this->cache = 3;
 					}
 				}	
 			else 
 				unset($this->cache);
-					}
+			}
 		
 	if($formatted && !$this->cache){
-			self::loadRxNorm();
+		self::loadRxNorm();
 			$xml = ($_POST['relatedBy']?$this->api->getRelatedByRelationship("$formatted","$id"):$this->api->getRelatedByType("$formatted","$id"));
 			}
 		elseif(!$this->cache){
-		
-			self::loadRxNorm();
 			$xml = $this->api->getAllRelatedInfo($id);
+		}
+	if(COUCH && !$this->cache){
+		$exec_line = "curl -X PUT '" . COUCH_HOST . '/' . COUCH_DB . '/'.$couch_token ."' -d \ '" . $xml ."'" ;
+		$resultant = exec($exec_line);
+		$xml = json_decode($xml);
+						
 			}
 		
-		// messy but allows us to quickly enable url accessors (for whatever reason..)
-		// could allow for remote caching!
-			$return = (XML_URL_ACCESS && CACHE_XML?$xml:new SimpleXMLElement($xml));
+		
+	$return = ((XML_URL_ACCESS && CACHE_XML) || COUCH ?$xml:new SimpleXMLElement($xml));
 			
-			if(CACHE_XML && !$this->cache) file_put_contents("$put_file", $return->asXML());
+			if(CACHE_XML && !$this->cache && !COUCH) file_put_contents("$put_file", $return->asXML());
 			return $return;
 		 }
 
-	function xmle_table_row($key,$value,$key_css_class='property',$value_css_class='value',$first_row=NULL){
-	return		($key!='tty' ? "\n\t\t\t<li class='record_".(self::$normalElements[strtoupper($key)]?self::$normalElements[strtoupper($key)]:$key)."'>".
-				(self::$normalElements[strtoupper($value)]?self::$normalElements[strtoupper($value)]:$value)."</li>":NULL);
-	}
 	function sxmle_to_obj($xml){
 		$result = $xml->xpath('conceptProperties|name');
 		foreach($result as $object){
@@ -432,10 +441,7 @@ class rxNormRef{
 
 	function list_2d_xmle($xml){
 		if(is_a($xml,'SimpleXMLElement')){
-		
-		// this needs to be done better.... shows up if no rows are returned... should attempt to count the number of simpleXML elements ...
-	
-		
+
 		foreach($xml as $value){
 		// second row avoids displaying the parameter name for subsequent rows
 		// parent name is used to determine what columns to display (rather than parse the xml object)
@@ -457,14 +463,25 @@ class rxNormRef{
 			if($result != $old_result) echo "\n\t<ul>\n<li>".$result."</li>\n</ul>\n";
 			$old_result = $result;
 			}	
-		}
-		unset($xml);
-		unset($result);
-		//obcer::ob_cacher();
-	}
-	
-	function show_row($rowData){
+		}else{
+	// messy but works for now ... need to rework this 
+			foreach($xml as $key=>$json){
+				if(is_object($json) || is_array($json)){
+				$result = '';
+					foreach($json as $key2=>$showme2){
+						foreach($showme2 as $process)
+					 		$result .= self::show_row($process);
+					}
+				}
 
+				echo ($json->conceptProperties || $json->name ?"\n\t<ul>\n\t\t<li class='property'>".$json->tty."</li>\n\t</ul>":NULL);
+				if($result != $old_result) echo "\n\t<ul>\n<li>".$result."</li>\n</ul>\n";
+				$old_result = $result;	
+			}
+		}
+	}
+
+	function show_row($rowData){
 		foreach($rowData as $key=>$value){
 			if(!in_array($key,$this->c_filter)){
 				if( (SUPPRESS_EMPTY_COL && $value == '')) ;
@@ -480,8 +497,5 @@ class rxNormRef{
 		}
 		return "\n\t<ul>\n\t\t$return\n\t\t</ul>\n";
 	}
-	
-
 }
  new RxNormRef;
-

@@ -1,7 +1,7 @@
 <?php
 
 class obcer{
-	static function cache_token(){
+	static function cache_token($settings=NULL){
 	// generates file name for cache storage
 		if($_POST){
 		// also check count of array to see if it is all of the checkbox, in that case use _allRelatedInfo
@@ -17,7 +17,7 @@ class obcer{
 					$token []= str_replace(' ','',strtolower(trim($value)));
 				}
 				// account for hidden file name if present (HIDE_CACHE), also adds 'allRelatedInfo' for specifying the default type if none is provided (via post).
-			return (HIDE_CACHE?'.':NULL).($token2?implode('__',$token):implode('_',$token).'_allRelatedInfo');
+			return (HIDE_CACHE && $settings != 'db'?'.':NULL).($token2?implode('__',$token):implode('_',$token).'_a');
 		}
 	}
 	

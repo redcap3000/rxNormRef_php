@@ -5,6 +5,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 		<meta http-equiv="Content-Style-Type" content="text/css" />
 <?php
+
 error_reporting(0);
 echo 
 		'<link rel="stylesheet" type="text/css" href="css/'.($_POST['css_wide']?'wide.css':'fixed_field.css').'" />            
@@ -32,7 +33,7 @@ echo
   }
  if($_POST['searchTerm'] || $_GET['r'] || $_GET['u']) {
  	
- 	require("../config.php");
+ 	require("../lib/config.php");
 	require("../lib/obcer.php");
  //	obcer::ob_cacher();
  	
