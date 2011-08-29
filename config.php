@@ -1,5 +1,4 @@
 <?php
-
 /* Bare Minimum Settings
 
 	For RxNormRef to work it must know where it is located on your server(BASE_ROOT),
@@ -22,6 +21,15 @@ define('PROGRESSIVE_LOAD', true);
 
 // removes newlines and tabs from generated record (html) output.
 define('COMPRESS_OUTPUT',false);
+
+/* Couch DB Support Got one ? Get it! Uses exec with curl for virtually no php overhead
+  Will be adding more features shortly...
+
+  */
+
+define('COUCH',false);
+//define('COUCH_HOST','http://localhost:5984');
+//define('COUCH_DB','test');
 
 
 /* Cache Settings
