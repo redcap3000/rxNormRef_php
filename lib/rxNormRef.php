@@ -373,8 +373,11 @@ class rxNormRef{
 						$_POST['searchTerm'] =$first;
 						//unset($xml);
 					}
-				}elseif($_POST['r'])
+				}elseif($_POST['r']){
+				
 					$id= trim($_POST['r']);
+						
+					}
 				// Now we get the actual syntax to return the real xml object
 				if($id)
 						$xml = self::make_xml($id,$formatted);
@@ -428,12 +431,14 @@ class rxNormRef{
 	// could check post here to see if cache_xml enabled and to return that instead of loading anything ...
 	// switches between several rxnorm api function calls to make the interface more accessible.
 	// add case of 'extra' .. not sure what to store .. and how to recall it properly may need additional rewriting to cache properly...
-			$xml = self::couchCheck();
+			
 		if(COUCH && !$this->cache){
+			$xml = self::couchCheck();
 			$this->api->setOutputType('json');
 				
 		
 			}
+			
 	if(CACHE_XML){
 			$x_token = $this->cache_token();
 			$put_file = SERVER_ROOT . XML_STORE . $x_token;
@@ -458,6 +463,8 @@ class rxNormRef{
 			$xml = ($_POST['relatedBy']?$this->api->getRelatedByRelationship("$formatted","$id"):$this->api->getRelatedByType("$formatted","$id"));
 			}
 		elseif(!$this->cache){
+		self::loadRxNorm();
+		echo 'hi';
 			$xml = $this->api->getAllRelatedInfo($id);
 		}
 	
