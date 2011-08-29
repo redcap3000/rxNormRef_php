@@ -29,6 +29,7 @@ class rxNormRef{
 	}
 	
 	function __construct(){
+		$this->cache_token = obcer::cache_token((COUCH?'db':NULL));
 		$this->start_time = (float) array_sum(explode(' ',microtime()));
 		$this->oh_memory = round(memory_get_usage() / 1024);
 		// set up the 'filter' variable to determine what columns to show
@@ -53,10 +54,9 @@ class rxNormRef{
 		}
 		// process any post if existant
 		if($_POST) self::post_check();
-		
-		
+
 		// if we haven't died by now then close and flush the ob cache for the final time
-	//	obcer::ob_cacher(1);
+
 		// echo the footer and stats to screen.
 		echo '<div id="stats">' . $this->stats().'</div>';
 
@@ -88,27 +88,64 @@ class rxNormRef{
 				// do a obcacher check to see if we cant get the XML back and avoid making the ndfApi call
 				// write something to rewrite the xml files in a better (smaller) format, or store in database - or both.
 				// ideally tab/space delimited would probably be best
-					$result = new SimpleXMLElement($this->ndfApi->getAllInfo($_POST['nui']));	
+
+					if(COUCH){
+					// how do we set output of ndfApi ?? without the method ?? force it to by modifying the source? that wont work.. will have to update the library
+						$result = self::couchCheck();
+						
+						if($result != false) {
+							$this->cache = 4;
+						}else{
+						 unset($this->cache);
+						// put the couch ??
+						}
+					}
+
+					if(!$this->cache){
+					// we could also just decode a refined object to store in a 'better/smaller' format??
+					// run curl in background??
+						if(COUCH) $this->ndfApi->setOutputType('json');
+						$result = (COUCH?$this->ndfApi->getAllInfo($_POST['nui']):new SimpleXMLElement($this->ndfApi->getAllInfo($_POST['nui'])));
+						
+						if(COUCH && $result) self::put_couch($result);
+						$result = json_decode($result);
+						
+					}
+				
+					// store this if it is a simple xml element ??
 					// to do reverse order of this stuff....
 					foreach($result as $key=>$value){
 						if($key=='fullConcept'){
 							foreach($value as $key2=>$value2){	
 								if($key2 == 'parentConcepts'){
+									
 									echo '<ul><li class="a_title">Parent Concepts</li>' . "\n";
 									foreach($value2 as $key3=>$value3){
+										
+										if(is_a($value3,'stdClass')){
+											
+											
+											$value3 = $value3->concept[0];
+											
+										}
 										foreach($value3 as $key4=>$value4)
 										// turn this into a 'concept' function ...
 											if($key4=='conceptName') $p_concept_name = $value4;
 											elseif($key4=='conceptNui') $p_concept_nui = $value4;
 											elseif($key4=='conceptKind')
-												echo self::build_concept($value4,$p_concept_name,$p_concept_nui);
-												//echo '<li class="'.$value4.'"><ul><li class="conceptName">'. $p_concept_name . '</li><li class="nui">'.$p_concept_nui. "</li>\n";
+												self::build_concept($value4,$p_concept_name,$p_concept_nui);
+												echo '<li class="'.$value4.'"><ul><li class="conceptName">'. $p_concept_name . '</li><li class="nui">'.$p_concept_nui. "</li>\n";
 										echo '</ul></li>';
 									}
 								}elseif($key2 == 'childConcepts'){
 									//echo 
 										unset($result);
 									if($value2 != '');
+//									if($value2[0]
+//									echo print_r($value2);
+									if(is_a($value2[0],'stdClass')){
+										$value2 = $value2[0]->concept;
+									}
 									foreach($value2 as $array){
 										unset($temp);
 										foreach($array as $key5 =>$value5)
@@ -123,6 +160,11 @@ class rxNormRef{
 									
 								}elseif($key2 == 'groupProperties'){
 									unset($result);
+									
+									if(is_a($value2[0],'stdClass')){
+										$value2 = $value2[0]->property;
+									}
+									
 									foreach($value2 as $item)
 										foreach($item as $p_name=>$p_value){
 											unset($link);
@@ -243,26 +285,14 @@ class rxNormRef{
 					// nui, transitive
 						$result = $this->NdfApi->getParentConcepts($nui2);
 						break;
-					case 5:
-					// getRelatedConceptsByRole
-					// nui, roleName (getRoleList()), transitive
-						;
-						break;
-					case 6:
+					// getRelatedConceptsByRole nui, roleName (getRoleList()), transitive
+					case 5:;break;
 					//getRelatedConceptsByReverseRole( nui, roleName, transitive )
-						;
-						break;	
-						
-					case 7:
-					//getRelatedConceptsByAssociation( nui, assocName )
-						;
-						break;
-						
-					case 8:
-					//getVaClassOfConcept( nui )
-						;
-						break;	
-						
+					case 6:;break;	
+					//getRelatedConceptsByAssociation( nui, assocName )	
+					case 7:;break;
+						//getVaClassOfConcept( nui )
+	
 				}
 				}
 			elseif($nui2 && $_POST['di']){
@@ -358,33 +388,50 @@ class rxNormRef{
 				}
 	}
 	
-	function make_xml($id,$formatted=false){
-	// could check post here to see if cache_xml enabled and to return that instead of loading anything ...
-	// switches between several rxnorm api function calls to make the interface more accessible.
-	// add case of 'extra' .. not sure what to store .. and how to recall it properly may need additional rewriting to cache properly...
+	
+	function couchCheck($json_array=false){
+	
 		if(COUCH && $_POST){
 		// check if it already exists first ...
-			$couch_token = obcer::cache_token('db');
-			$exec_line = "curl -X GET " . COUCH_HOST . "/" . COUCH_DB . "/$couch_token";echo $exec_line;
+			$couch_token =$this->cache_token;
+			$exec_line = "curl -X GET " . COUCH_HOST . "/" . COUCH_DB . "/$couch_token";
 			$tester = exec($exec_line);
 			if($tester =='{"error":"not_found","reason":"missing"}'){
 				self::loadRxNorm();
-				//echo 'help me!';
 				unset($this->cache);
+				return false;
 				}
 			else{
 			
 				$this->cache =4;
-				$xml=json_decode($tester);
+				return json_decode($tester,$json_array);
 			}
 		}
+	
+	}
+	
+	
+	function put_couch($xml){
+		
+		$exec_line = "curl -X PUT '" . COUCH_HOST . '/' . COUCH_DB . '/'.$this->cache_token ."' -d \ '" . $xml ."'" ;
+		exec($exec_line);
+		return  json_decode($xml);
+
+	
+	}
+	function make_xml($id,$formatted=false){
+	
+	// could check post here to see if cache_xml enabled and to return that instead of loading anything ...
+	// switches between several rxnorm api function calls to make the interface more accessible.
+	// add case of 'extra' .. not sure what to store .. and how to recall it properly may need additional rewriting to cache properly...
+			$xml = self::couchCheck();
 		if(COUCH && !$this->cache){
 			$this->api->setOutputType('json');
 				
 		
 			}
 	if(CACHE_XML){
-			$x_token = obcer::cache_token();
+			$x_token = $this->cache_token();
 			$put_file = SERVER_ROOT . XML_STORE . $x_token;
 
 			if(file_exists($put_file)){
@@ -409,12 +456,10 @@ class rxNormRef{
 		elseif(!$this->cache){
 			$xml = $this->api->getAllRelatedInfo($id);
 		}
-	if(COUCH && !$this->cache){
-		$exec_line = "curl -X PUT '" . COUCH_HOST . '/' . COUCH_DB . '/'.$couch_token ."' -d \ '" . $xml ."'" ;
-		$resultant = exec($exec_line);
-		$xml = json_decode($xml);
-						
-			}
+	
+	
+	if(COUCH && !$this->cache)
+		$xml = self::put_couch($xml);
 		
 		
 	$return = ((XML_URL_ACCESS && CACHE_XML) || COUCH ?$xml:new SimpleXMLElement($xml));
@@ -474,7 +519,12 @@ class rxNormRef{
 					}
 				}
 
-				echo ($json->conceptProperties || $json->name ?"\n\t<ul>\n\t\t<li class='property'>".$json->tty."</li>\n\t</ul>":NULL);
+
+
+
+
+
+				echo ($json->conceptProperties || $json->name ?"\n\t<ul>\n\t\t<li class='property'>".  (self::$normalElements[strtoupper($json->tty)]?self::$normalElements[strtoupper($json->tty)]:$json->tty)  ."</li>\n\t</ul>":NULL);
 				if($result != $old_result) echo "\n\t<ul>\n<li>".$result."</li>\n</ul>\n";
 				$old_result = $result;	
 			}
@@ -483,13 +533,16 @@ class rxNormRef{
 
 	function show_row($rowData){
 		foreach($rowData as $key=>$value){
+			
+			if($rowData->tty == 'DF') $disable_link = true;
+			else $disable_link= false;
 			if(!in_array($key,$this->c_filter)){
 				if( (SUPPRESS_EMPTY_COL && $value == '')) ;
 				else{
 					// adjust here for pretty URLS
 					// if(PRETTY_GET_URLS)
 					// also adjust for key on dose form - prevent does form rows from having rxcui/umlscui links
-					if($key == 'rxcui' || $key == 'umlscui') $return .= "\n\t". '<li class="record_'.$key.'">'. "<a href='?".($key=='rxcui'?'r':'u')."=$value'>" .($key=='umlscui' && $value ==''?'n/a':$value) . "</a></li>";
+					if(($key == 'rxcui' || $key == 'umlscui') && !$disable_link) $return .= "\n\t". '<li class="record_'.$key.'">'. "<a href='?".($key=='rxcui'?'r':'u')."=$value'>" .($key=='umlscui' && $value =='' && !$disable_link?'n/a':$value) . "</a></li>";
 					else
 						$return .= "\n\t". '<li class="record_'.$key.'">'. ($key=='umlscui' && $value ==''?'n/a':$value) . "</li>"; 
 					}
