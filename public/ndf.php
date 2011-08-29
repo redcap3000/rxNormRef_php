@@ -116,7 +116,7 @@ echo
 
 // allow get variables to begin NUI lookups/convert to nui id's with the ndf post var
  if($_POST['nui']) {
- 	require("../config.php");
+ 	require("../lib/config.php");
 	require("../lib/obcer.php");
  	require("../lib/rxNormRef.php");
 }
