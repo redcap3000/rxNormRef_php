@@ -105,10 +105,14 @@ class rxNormRef{
 					// we could also just decode a refined object to store in a 'better/smaller' format??
 					// run curl in background??
 						if(COUCH) $this->ndfApi->setOutputType('json');
+						
 						$result = (COUCH?$this->ndfApi->getAllInfo($_POST['nui']):new SimpleXMLElement($this->ndfApi->getAllInfo($_POST['nui'])));
 						
-						if(COUCH && $result) self::put_couch($result);
-						$result = json_decode($result);
+						if(COUCH && $result) {
+							self::put_couch($result);
+							$result = json_decode($result);
+						}
+						
 						
 					}
 				
