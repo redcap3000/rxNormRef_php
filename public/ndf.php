@@ -39,7 +39,7 @@ function html_form($type,$array,$id,$label=true,$legend=true,$blank_item=true,$f
 				$result.= '<option value="'.$prop.'" '.($_POST[$id] == $prop? " selected ":NULL).'>'. $select . '</option>';
 				break;
 			case "radio":
-				$result .= '<input type="radio" name="'.$id.'" id="'.$id.'" value="'.$prop.'" '.($_POST[$id] == $prop ? ' checked ':NULL).' /> '.($label==true?'<label for= "'.$prop.'">'.$select.'</label>':NULL);
+				$result .= '<input type="radio" name="'.$id.'" id="'.$id.'" value="'.$prop.'" '.($_POST[$id] == $prop ? ' checked = "checked" ':NULL).' /> '.($label==true?'<label for= "'.$prop.'">'.$select.'</label>':NULL);
 				break;
 			}
 			if($inner_container !=NULL && is_array($inner_container)) $result .= $inner_container[0] . $result . $inner_container[1];
@@ -47,9 +47,9 @@ function html_form($type,$array,$id,$label=true,$legend=true,$blank_item=true,$f
 	elseif($type='checkbox' && is_string($array))
 	// this can't use won't need an inner array... also support an array of checkboxes (given an assoc array)
 	// if the count of the passed items is equal to the default then automatically set label/legend/blank item / fieldset to false
-		 $result .= '<input type="checkbox" name="'.$id.'" id="'.$id.'" '.($_POST[$id] != 'on' ?  NULL :' checked ' ).'/>';
+		 $result .= '<input type="checkbox" name="'.$id.'" id="'.$id.'" '.($_POST[$id] != 'on' ?  NULL :' checked = "checked" ' ).'/>';
 		// check box processing
-		return ($fieldset!=true?NULL:'<fieldset id="'.$id.'">')
+		return ($fieldset!=true?NULL:'<fieldset>')
 				.
 				($legend!=true?NULL:'<legend>Show '.$id.' value</legend>')
 				.
@@ -68,8 +68,8 @@ echo
     	<div id = "header">
 				<img src="img/rxnix_logo.gif" alt="rxnix logo"/>
 				<form method="post" action="" class="main_form">
-					<fieldset id="nui">
-						<label for="nui">NDF Search</label>
+					<fieldset>
+						<legend>NDF Search</legend>
 						
 							<input type="text" id="nui" title="Nui Entry1" name="nui"  '. ($_POST['nui']?' value = "'. $_POST['nui'] . '" ':NULL).' />'
 						;
@@ -84,9 +84,9 @@ echo
 						// also if advanced load the form class @!!
 						
 						//echo html_form('radio',array('By NUI'=>'byID','By Name'=>'byName'),'findConcepts',true,false);
-						echo '<input type="checkbox" name="findConcepts" id="findConcepts" '.($_POST['findConcepts'] == 'on' ? ' checked ':NULL ).'/><label for="findConcepts">Lookup NUI</label></fieldset>';
+						echo '<input type="checkbox" name="findConcepts" id="findConcepts" '.($_POST['findConcepts'] == 'on' ? ' checked = "checked" ':NULL ).'/><label for="findConcepts">Lookup NUI</label></fieldset>';
 						
-						echo '<fieldset><input type="checkbox" name="advanced" id="advanced" '.($_POST['advanced'] != 'on' ?  NULL :' checked ' ).'/><label for="advanced">Advanced Search</label></fieldset>';
+						echo '<input type="checkbox" name="advanced" id="advanced" '.($_POST['advanced'] != 'on' ?  NULL :' checked = "checked" ' ).'/><label for="advanced">Advanced Search</label>';
 						
 						echo($_POST['advanced']!='on'?NULL:'<fieldset>'. 
 						'<em>Pick one*</em>
@@ -113,11 +113,11 @@ echo
 					'
 					</fieldset>
 					
-					<fieldset id="nui_opt">
+					<fieldset>
 						<legend>NUI Options</legend>
 						'.html_form('radio',array(1,2,3),'scope')
 						.'
-						<input type="checkbox" name="trans" id="trans" '.($_POST['trans'] != 'on' ?  NULL :' checked ' ).'/><label for="trans">Transitive</label></fieldset>
+						<input type="checkbox" name="trans" id="trans" '.($_POST['trans'] != 'on' ?  NULL :' checked = "checked" ' ).'/><label for="trans">Transitive</label></fieldset>
 					').
 					'<input type="submit"/>
 	  		</form>
