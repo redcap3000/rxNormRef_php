@@ -91,7 +91,6 @@ class rxNormRef{
 		}
 
 		if($_POST['nui']){
-		print_r($_POST);				
 				// default to showing all info
 				// the result to cache (xml) is the result!!
 				// do a obcacher check to see if we cant get the XML back and avoid making the ndfApi call
