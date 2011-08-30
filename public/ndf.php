@@ -1,15 +1,8 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> 
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en" dir="ltr">
-	<head>
-		<title>RxNIX</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-		<meta http-equiv="Content-Style-Type" content="text/css" />
-		 <link rel="stylesheet" type="text/css" href="css/ndf.css" />
 <?php
+include('header.html');
 error_reporting(0);
-print_r($_POST);
-print_r($_GET);
-// <link rel="stylesheet" type="text/css" href="css/'.($_POST['css_wide']?'wide.css':'fixed_field.css').'" />
+
+echo' <link rel="stylesheet" type="text/css" href="css/ndf.css" />';
 
 if($_POST['property'] != '' ||$_POST['role'] != ''|| $_POST['association'] != ''   || $_POST['nui_a'] != '1')
 {
@@ -24,10 +17,16 @@ if($_POST['nui']){
 unset($_GET);
 }
 
-if($_GET['n'] || $_GET['u']){
+if( $_GET['u'] || $_GET['s']){
 //	unset($_POST);
-	$_POST['nui']=$_GET['n'];
+echo 'hiya';
+	$_POST['nui']=($_GET['s']?$_GET['s']:$_GET['n']);
+	print_R($_POST);
 	$_POST['findConcepts'] = 'on';
+}
+
+if($_GET['n'] ){
+	$_POST['nui'] = $_GET['n'];
 }
 
 function html_form($type,$array,$id,$label=true,$legend=true,$blank_item=true,$fieldset=true,$inner_container=NULL){
@@ -86,7 +85,7 @@ echo
 						// also if advanced load the form class @!!
 						
 						//echo html_form('radio',array('By NUI'=>'byID','By Name'=>'byName'),'findConcepts',true,false);
-						echo '<input type="checkbox" name="findConcepts" id="findConcepts" '.($_POST['findConcepts'] == 'on' ? ' checked ':NULL ).'/><label for="findConcepts">Lookup NUI</label></fieldset>';
+						echo '<input type="checkbox" name="findConcepts" id="findConcepts" '.($_POST['findConcepts'] != 'on' ? ' checked ':NULL ).'/><label for="findConcepts">Lookup NUI</label></fieldset>';
 						
 						echo '<fieldset><input type="checkbox" name="advanced" id="advanced" '.($_POST['advanced'] != 'on' ?  NULL :' checked ' ).'/><label for="advanced">Advanced Search</label></fieldset>';
 						
@@ -135,34 +134,4 @@ echo
  	require("../lib/rxNormRef.php");
 }
 
-echo"
-		</div>
-				<div id = 'help'>
-				<ul>
-					<li><img class='bg_black' src='img/nlm-logo-white.png' alt = 'National Library of Medicine Logo' title='NLM Logo' align='middle'/>
-						<em>What is RxNix</em>
-						<p>RxNix is a simple semantic medications tool that intefaces with RxNorm - a database developed at the <a href='http://www.nlm.nih.gov/'>National Library of Medicine</a>.</p>
-						<a href=;http://www.nlm.nih.gov/research/umls/rxnorm/index.html'>About RxNorm</a>
-					</li>
-						
-					<li><img src='img/UMLS_header_newtree.gif' alt= 'Unified Medication Language System' title='UMLS Logo' align='middle'/>
-						<em>UMLS</em>
-						<p>RxNorm uses the <a href='http://www.nlm.nih.gov/research/umls/'>Unified Medication Language System</a> to enable a variety of systems to communicate with each other.</p> <a href='http://www.nlm.nih.gov/research/umls/quickstart.html'>UMLS Quickstart Guide</a>
-					</li>
-						
-					<li>
-						<em>Searching</em>
-						<p>You may begin by entering an ingredient, drug name, concept or other in the Search field. The Advanced search page allows filtering on concept titles, <strong>and id conversions from one system (UMLSCUI/NDC/UNII and others) to RXCUI</strong></p>
-					</li>
-			
-					<li>
-					<em>About</em>
-						<p>Built with <a href='https://github.com/codeforamerica/rxNorm_php'>rxNorm_php</a> api library and <a href='https://github.com/codeforamerica/rxNormRef_php'>rxNormRef_php</a> maintained  by <a href='http://codeforamerica.org'>Code For America.</a>
-							</p>
-							<img src ='http://www.totalvalidator.com/images/valid_s_us508.gif' alt='Total Validator Badge' title='Validation Badge'/>
-					</li>
-				</ul>
-			</div>
-	</div>		
-		</body>
-</html>";
+include('footer.html');
