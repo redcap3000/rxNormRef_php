@@ -17,8 +17,9 @@ if($_POST['nui']){
 unset($_GET);
 }
 
-if( $_GET['u'] || $_GET['s']){
+if( $_GET['n'] || $_GET['s']){
 	$_POST['nui']=($_GET['s']?$_GET['s']:$_GET['n']);
+	if($_GET['s']) $_POST['s'] = $_GET['s'];
 	$_POST['findConcepts'] = 'on';
 }
 
@@ -52,6 +53,7 @@ function html_form($type,$array,$id,$label=true,$legend=true,$blank_item=true,$f
 				.
 				($legend!=true?NULL:'<legend>Show '.$id.' value</legend>')
 				.
+				
 				($type=='option'?
 				'<select title="'.$id.'" name="'.$id.'">'.
 					($blank_item != true?NULL:'<option value ="">Select '.$id.'</option>') .$result . '</select>':$result)
@@ -82,7 +84,7 @@ echo
 						// also if advanced load the form class @!!
 						
 						//echo html_form('radio',array('By NUI'=>'byID','By Name'=>'byName'),'findConcepts',true,false);
-						echo '<input type="checkbox" name="findConcepts" id="findConcepts" '.($_POST['findConcepts'] != 'on' ? ' checked ':NULL ).'/><label for="findConcepts">Lookup NUI</label></fieldset>';
+						echo '<input type="checkbox" name="findConcepts" id="findConcepts" '.($_POST['findConcepts'] == 'on' ? ' checked ':NULL ).'/><label for="findConcepts">Lookup NUI</label></fieldset>';
 						
 						echo '<fieldset><input type="checkbox" name="advanced" id="advanced" '.($_POST['advanced'] != 'on' ?  NULL :' checked ' ).'/><label for="advanced">Advanced Search</label></fieldset>';
 						

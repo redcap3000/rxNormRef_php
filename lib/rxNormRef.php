@@ -91,8 +91,7 @@ class rxNormRef{
 		}
 
 		if($_POST['nui']){
-		
-				
+		print_r($_POST);				
 				// default to showing all info
 				// the result to cache (xml) is the result!!
 				// do a obcacher check to see if we cant get the XML back and avoid making the ndfApi call
@@ -111,13 +110,14 @@ class rxNormRef{
 						}
 					}
 
-					if(!$this->cache){
+					if(!$this->cache || $_POST['s']){
 						self::loadNdf();
 					// we could also just decode a refined object to store in a 'better/smaller' format??
 					// run curl in background??
 						if(COUCH) $this->ndfApi->setOutputType('json');
 						// this processing is for when people want to search by name or they click a link to search the term in RxNorm (COMING SOON!!)
-						if($_POST['findConcepts'] == 'on'){
+						if($_POST['findConcepts'] != 'on'){
+							
 							$result = $this->ndfApi->findConceptsByName($_POST['nui'],'DRUG_KIND');
 							if(!COUCH && !$this->cache){
 								$result = new SimpleXMLElement($result);
@@ -131,11 +131,12 @@ class rxNormRef{
 							}
 
 						}else{
-						
 							if(COUCH){
+							
 								$result = $this->ndfApi->getAllInfo($_POST['nui']);
 							}else{
 								$result = $this->ndfApi->getAllInfo($_POST['nui']);
+								
 								$result = new SimpleXMLElement($result);
 							}
 						}						
@@ -197,7 +198,7 @@ class rxNormRef{
 											// these links need to be done better... all my paths need to be done better...
 											// group 'MESH' attributes
 												if($the_name=='RxNorm_CUI' || $the_name =='UMLS_CUI') $link = "../public/?".($the_name=='RxNorm_CUI'?'r':'u')."=$p_value";
-												$result .= "\n<li>\n<ul class='gProperty'>\n<li class='group_t'>".str_replace('_',' ',$the_name)." </li>\n<li class='gValue'>".($link?"<a href='$link'> $p_value</a>":strtolower($p_value))."</li>\n</ul>\n</li>";
+												$result .= "\n<li>\n<ul class='gProperty'>\n<li class='._t'>".str_replace('_',' ',$the_name)." </li>\n<li class='".strtolower($the_name)."'>".($link?"<a href='$link'> $p_value</a>":strtolower($p_value))."</li>\n</ul>\n</li>";
 												}
 												
 										}
