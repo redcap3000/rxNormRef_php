@@ -1,7 +1,3 @@
-/* @override http://myparse.net/sb4/rxNormRef_php/public/css/ndf.css */
-
-
-
 html{
 	font-family: Arial, san-serif;
 }
@@ -126,10 +122,38 @@ img.bg_black{
 }
 
 
-#ndf_content ul li {margin: .25em;
+#ndf_content ul li {margin: .55em;
 
 float: left;
 }
+
+
+#ndf_content ul li ul.gProperty li.gValue {
+	margin-top: 1.1em;
+	font-size: 1.2em;
+}
+
+
+ li.mesh_definition {
+	width: 27.7em;
+	text-align: left;
+	line-height: 1.55em;float:right;
+}
+
+li.group_t{
+	min-width: 7em;
+	padding: .55em;
+
+	border-bottom: solid black .25em;
+	color: maroon;
+	font-weight: bold;
+	font-size: 1.2em;
+text-align:right;
+border-right: solid black .25em;
+}
+
+
+
 
 #ndf_content ul li.MECHANISM_OF_ACTION_KIND,#ndf_content ul li.PHYSIOLOGIC_EFFECT_KIND,#ndf_content ul li.DISEASE_KIND,#ndf_content ul li.INGREDIENT_KIND {
 	text-align: center;width: 97%;
@@ -165,8 +189,8 @@ va_file,va_ien {
 }
 
 
-#ndf_content ul li ul li{
-	float: left;width: 6.5em;
+#ndf_content .gProperty{
+	float: left;width: 28.9em;
 }
 
 #ndf_content ul li.conceptName {
@@ -270,4 +294,9 @@ width: auto;
 
 #led ul {
 	border: none;width: 6em;
+}
+
+ul.gProperty {
+	width: 20em;
+float: left;
 }
