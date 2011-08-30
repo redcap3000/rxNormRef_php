@@ -403,9 +403,10 @@ class rxNormRef{
 						
 					}
 				// Now we get the actual syntax to return the real xml object
-				if($id)
+				if($id){
+				
 						$xml = self::make_xml($id,$formatted);
-						
+						}
 				// Modify output slightly to use filters if provided	
 				if($formatted && !$_POST['drugs']){
 					// this is still in testing phases - for the relationship checker- returns raw object for now
@@ -454,9 +455,8 @@ class rxNormRef{
 			}
 			
 		if(CACHE_XML){
-			$x_token = $this->cache_token();
-			$put_file = SERVER_ROOT . XML_STORE . $x_token;
-
+			$x_token = $this->cache_token;
+			$put_file = SERVER_ROOT . XML_STORE . "$x_token";
 			if(file_exists($put_file)){
 			// get file ?? pull in xml file as URL if it exisists...
 				if(XML_URL_ACCESS){
@@ -482,14 +482,13 @@ class rxNormRef{
 		}
 	
 	
-	if(COUCH && !$this->cache)
-		$xml = self::put_couch($xml);
-		
-		
+	if(COUCH && !$this->cache)$xml = self::put_couch($xml);
+
 	$return = ((XML_URL_ACCESS && CACHE_XML) || COUCH ?$xml:new SimpleXMLElement($xml));
 			
-			if(CACHE_XML && !$this->cache && !COUCH) file_put_contents("$put_file", $return->asXML());
-			return $return;
+	if(CACHE_XML && !$this->cache && !COUCH) file_put_contents("$put_file", $return->asXML());		
+			
+	return $return;
 		 }
 
 	function sxmle_to_obj($xml){
