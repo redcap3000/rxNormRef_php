@@ -1,5 +1,4 @@
 <?php
-
 class rxNormRef{
 	static	$normalElements = Array(
 			'TTY'=>'Term Type','IN'=>'Ingredients','PIN'=>'Precise Ingredient',
@@ -76,12 +75,23 @@ class rxNormRef{
 	. sprintf("%.4f", (((float) array_sum(explode(' ',microtime())))-$this->start_time)) . " seconds</em></p><p><em>Overhead memory : ".$this->oh_memory." k</em></p>";
 
 	}
-	function build_concept($value,$c_name,$c_nui){
+	function build_concept($value,$c_name,$c_nui,$c_kind=NULL){
 		return '<li class="'.$value.'"><ul><li class="conceptName">'. strtolower($c_name) . '</li><li class="nui"><a href="?n='.$c_nui. '">'. $c_nui. "</a></li>\n";
 	}
 
 	function post_check(){
+	
+		if($_POST['drugs'] == 'on' && $_POST['searchTerm']){
+				self::loadRxNorm();
+				$xml = $this->api->getDrugs($_POST['searchTerm']);
+				//unset($formatted);
+				$xml = new SimpleXMLElement($xml);
+// assumes user enters the correct spelling :(
+				return self::list_2d_xmle($xml->drugGroup->conceptGroup);
+		}
+
 		if($_POST['nui']){
+		
 				self::loadNdf();
 				// default to showing all info
 				// the result to cache (xml) is the result!!
@@ -105,15 +115,32 @@ class rxNormRef{
 					// we could also just decode a refined object to store in a 'better/smaller' format??
 					// run curl in background??
 						if(COUCH) $this->ndfApi->setOutputType('json');
+						// this processing is for when people want to search by name or they click a link to search the term in RxNorm (COMING SOON!!)
+						if($_POST['findConcepts'] != 'on'){
+							$result = $this->ndfApi->findConceptsByName($_POST['nui'],'DRUG_KIND');
+							if(!COUCH && !$this->cache){
+								$result = new SimpleXMLElement($result);
+								foreach($result->xpath('groupConcepts/concept') as $ic)
+									$return .= '<ul><li>' . self::build_concept($ic->conceptKind,$ic->conceptName,$ic->conceptNui) . '</li></ul>';	
+							echo $return;
+							// exit the logical flow... 
+							return true;
+							}
+
+						}else{
 						
-						$result = (COUCH?$this->ndfApi->getAllInfo($_POST['nui']):new SimpleXMLElement($this->ndfApi->getAllInfo($_POST['nui'])));
-						
+							if(COUCH){
+								
+								$result = $this->ndfApi->getAllInfo($_POST['nui']);
+							}else{
+								$result = $this->ndfApi->getAllInfo($_POST['nui']);
+								$result = new SimpleXMLElement($result);
+							}
+						}						
 						if(COUCH && $result) {
 							self::put_couch($result);
 							$result = json_decode($result);
 						}
-						
-						
 					}
 				
 					// store this if it is a simple xml element ??
@@ -122,31 +149,23 @@ class rxNormRef{
 						if($key=='fullConcept'){
 							foreach($value as $key2=>$value2){	
 								if($key2 == 'parentConcepts'){
-									
 									echo '<ul><li class="a_title">Parent Concepts</li>' . "\n";
 									foreach($value2 as $key3=>$value3){
-										
-										if(is_a($value3,'stdClass')){
-											
-											
+										if(is_a($value3,'stdClass'))
 											$value3 = $value3->concept[0];
-											
-										}
 										foreach($value3 as $key4=>$value4)
 										// turn this into a 'concept' function ...
 											if($key4=='conceptName') $p_concept_name = $value4;
 											elseif($key4=='conceptNui') $p_concept_nui = $value4;
 											elseif($key4=='conceptKind')
 												self::build_concept($value4,$p_concept_name,$p_concept_nui);
-												echo '<li class="'.$value4.'"><ul><li class="conceptName">'. $p_concept_name . '</li><li class="nui">'.$p_concept_nui. "</li>\n";
+												echo '<li class="'.$value4.'"><ul><li class="conceptName">'. strtolower($p_concept_name) . '</li><li class="nui"><a href="?n='.$p_concept_nui.'">'.$p_concept_nui. "</a></li>\n";
 										echo '</ul></li>';
 									}
 								}elseif($key2 == 'childConcepts'){
-									//echo 
 										unset($result);
 									if($value2 != '');
-//									if($value2[0]
-//									echo print_r($value2);
+
 									if(is_a($value2[0],'stdClass')){
 										$value2 = $value2[0]->concept;
 									}
@@ -160,7 +179,6 @@ class rxNormRef{
 									
 									}
 									if($result)echo "<li class='a_title'>Child Concepts</li>\n\n".	 $result . '</li><li>';
-									
 									
 								}elseif($key2 == 'groupProperties'){
 									unset($result);
@@ -177,7 +195,7 @@ class rxNormRef{
 											// these links need to be done better... all my paths need to be done better...
 											// group 'MESH' attributes
 												if($the_name=='RxNorm_CUI' || $the_name =='UMLS_CUI') $link = "../public/?".($the_name=='RxNorm_CUI'?'r':'u')."=$p_value";
-												$result .= "\n<li>\n<ul>\n<li class='$p_name'>".str_replace('_',' ',$the_name)." </li>\n<li>".($link?"<a href='$link'> $p_value</a>":$p_value)."</li>\n</ul>\n</li>";
+												$result .= "\n<li>\n<ul>\n<li class='$p_name'>".str_replace('_',' ',$the_name)." </li>\n<li>".($link?"<a href='$link'> $p_value</a>":strtolower($p_value))."</li>\n</ul>\n</li>";
 												}
 												
 										}
@@ -185,7 +203,6 @@ class rxNormRef{
 								}elseif($key2 == 'groupRoles'){
 									unset($result);
 									
-									//print_r($value2[0]);
 									foreach($value2 as $roles)
 										foreach($roles as $roleName=>$roles2)
 											if($roleName == 'concept'){
@@ -194,7 +211,7 @@ class rxNormRef{
 												$roles_inner_value = '';
 												
 												foreach($roles2 as $roles_inner_key =>$roles_inner_value)
-													if($roles_inner_key == 'conceptName') $roles_concept_name = $roles_inner_value;
+													if($roles_inner_key == 'conceptName') $roles_concept_name = strtolower($roles_inner_value);
 													elseif($roles_inner_key == 'conceptNui') $roles_nui = $roles_inner_value;
 													else
 														$result .= "<li><ul><li class='$roles_inner_value'>$master_role $roles_concept_name</li><li class='nui'><a href='?n=$roles_nui'>$roles_nui</a></li></ul></li>";
@@ -326,19 +343,22 @@ class rxNormRef{
 					$formatted= implode('+',$_POST[$key]);
 
 		$cached=obcer::ob_cacher();
+		
+		// chacing isn't being done properly here for the basic searches .. we dont get in a couch check anywheres...
 		if($cached == TRUE) return 0;
 
-		if(($_POST['searchTerm'] || $_POST['r'] || $_POST['u']) && !$cached ) {
+		if(($_POST['searchTerm'] || $_POST['r'] || $_POST['u']) && !$cached) {
+		
 			// look up inside of defined cache location
-				if($_POST['id_lookup'] || $_POST['u'] ){
-					$lookup = $_POST['searchTerm'];
-					
-					if($_POST['id_lookup']){
-						$id_type = $_POST['id_lookup'];
-						
-					}elseif($_POST['u']){
+				if($_POST['id_lookup'] || $_POST['u']  || $_POST['r']){
+						// add other types to support more lookup types through get variables/post
+					if($_POST['u']){
 						$id_type = 'UMLSCUI';
 						$lookup = trim($_POST['u']);	
+					}elseif($_POST['r']){
+					
+						$id_type = 'RXCUI';
+						$lookup = $_POST['r'];
 					}
 					self::loadRxNorm();
 					$xml = $this->api->findRxcuiByID($id_type,$lookup);
@@ -352,13 +372,17 @@ class rxNormRef{
 					$xml = new SimpleXMLElement($this->api->findRxcuiByString($_POST['searchTerm']));
 					$id = $xml->idGroup->rxnormId;
 				}
-				if($id != '' && !$_POST['extra'] && !$_POST['r'] && !$_POST['u']) 
+				if($id != '' && !$_POST['extra'] && !$_POST['r'] && !$_POST['u']) {
 					echo '<p class="term_result">Term "<em>'. $_POST['searchTerm'] . ($_POST['id_lookup']? " of ID type " . $_POST['id_lookup'] : NULL) . '</em>" matches RXCUI: <em>' .$id . "</em></p>\n" ;
-				
-				elseif(!$_POST['extra'] && !$_POST['r'] && !$_POST['u']){
+					self::loadRxNorm();
+				}
+				elseif(!$_POST['extra'] && !$_POST['r'] && !$_POST['u'] ){
 					//self::loadRxNorm();
-					$search = new SimpleXMLElement($this->api->getSpellingSuggestions($_POST['searchTerm']));
-					echo '<p class="term_result"><em>Term "'. $_POST['searchTerm'].'" not found</em></p>';
+					
+					echo '<p class="term_result"><strong>Term'. ($_POST['id_lookup']?' of ' .$_POST['id_lookup'].' ' :' '). $_POST['searchTerm'].' not found</strong></p>';
+					
+					$search = (!$_POST['id_lookup']? new SimpleXMLElement($this->api->getSpellingSuggestions($_POST['searchTerm'])) : NULL);
+					
 					if($search->suggestionGroup->suggestionList->suggestion){
 						echo '<em>Did you mean?</em>' ;
 						foreach($search->suggestionGroup->suggestionList->suggestion as $loc=>$value)
@@ -383,7 +407,7 @@ class rxNormRef{
 						$xml = self::make_xml($id,$formatted);
 						
 				// Modify output slightly to use filters if provided	
-				if($formatted){
+				if($formatted && !$_POST['drugs']){
 					// this is still in testing phases - for the relationship checker- returns raw object for now
 					if($_POST['relatedBy'])
 						self::list_2d_xmle($xml);
@@ -409,37 +433,27 @@ class rxNormRef{
 				return false;
 				}
 			else{
-			
 				$this->cache =4;
 				return json_decode($tester,$json_array);
 			}
 		}
 	
 	}
-	
-	
+
 	function put_couch($xml){
-		
 		$exec_line = "curl -X PUT '" . COUCH_HOST . '/' . COUCH_DB . '/'.$this->cache_token ."' -d \ '" . $xml ."'" ;
 		exec($exec_line);
 		return  json_decode($xml);
 
-	
 	}
 	function make_xml($id,$formatted=false){
 	
-	// could check post here to see if cache_xml enabled and to return that instead of loading anything ...
-	// switches between several rxnorm api function calls to make the interface more accessible.
-	// add case of 'extra' .. not sure what to store .. and how to recall it properly may need additional rewriting to cache properly...
-			
 		if(COUCH && !$this->cache){
 			$xml = self::couchCheck();
 			$this->api->setOutputType('json');
-				
-		
 			}
 			
-	if(CACHE_XML){
+		if(CACHE_XML){
 			$x_token = $this->cache_token();
 			$put_file = SERVER_ROOT . XML_STORE . $x_token;
 
@@ -459,12 +473,11 @@ class rxNormRef{
 			}
 		
 	if($formatted && !$this->cache){
-		self::loadRxNorm();
+			self::loadRxNorm();
 			$xml = ($_POST['relatedBy']?$this->api->getRelatedByRelationship("$formatted","$id"):$this->api->getRelatedByType("$formatted","$id"));
 			}
 		elseif(!$this->cache){
-		self::loadRxNorm();
-		echo 'hi';
+			self::loadRxNorm();
 			$xml = $this->api->getAllRelatedInfo($id);
 		}
 	
@@ -529,11 +542,6 @@ class rxNormRef{
 					 		$result .= self::show_row($process);
 					}
 				}
-
-
-
-
-
 
 				echo ($json->conceptProperties || $json->name ?"\n\t<ul>\n\t\t<li class='property'>".  (self::$normalElements[strtoupper($json->tty)]?self::$normalElements[strtoupper($json->tty)]:$json->tty)  ."</li>\n\t</ul>":NULL);
 				if($result != $old_result) echo "\n\t<ul>\n<li>".$result."</li>\n</ul>\n";
