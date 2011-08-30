@@ -128,6 +128,9 @@ float: left;
 }
 
 
+
+
+
 #ndf_content ul li ul.gProperty li.gValue {
 	margin-top: 1.1em;
 	font-size: 1.2em;
@@ -141,7 +144,7 @@ float: left;
 }
 
 li.group_t{
-	min-width: 7em;
+	min-width: 7.9em;
 	padding: .55em;
 
 	border-bottom: solid black .25em;
