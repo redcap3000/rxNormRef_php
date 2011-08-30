@@ -20,11 +20,11 @@ unset($_GET);
 if( $_GET['n'] || $_GET['s']){
 	$_POST['nui']=($_GET['s']?$_GET['s']:$_GET['n']);
 	if($_GET['s']) $_POST['s'] = $_GET['s'];
-	$_POST['findConcepts'] = 'on';
+	
 }
 
 if($_GET['n'] ){
-	$_POST['nui'] = $_GET['n'];
+	$_POST['nui'] = $_GET['n'];$_POST['findConcepts'] = 'on';
 }
 
 function html_form($type,$array,$id,$label=true,$legend=true,$blank_item=true,$fieldset=true,$inner_container=NULL){
