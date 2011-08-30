@@ -18,10 +18,7 @@ unset($_GET);
 }
 
 if( $_GET['u'] || $_GET['s']){
-//	unset($_POST);
-echo 'hiya';
 	$_POST['nui']=($_GET['s']?$_GET['s']:$_GET['n']);
-	print_R($_POST);
 	$_POST['findConcepts'] = 'on';
 }
 
