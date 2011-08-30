@@ -64,19 +64,21 @@ class rxNormRef{
 	function stats(){
 		switch ($this->cache) {
 		default:;break;
-		case 1:$cache = '<p>Rendering from cached HTML (file_get_contents)';break;
-		case 2:$cache = '<p>Rendering from cached XML (as url)';break;
-		case 3:$cache = '<p>Rendering from cached XML (file_get_contents)';break;
+		case 1:$cache = '<p>Rendering from cached HTML (file_get_contents)</p>';break;
+		case 2:$cache = '<p>Rendering from cached XML (as url)</p>';break;
+		case 3:$cache = '<p>Rendering from cached XML (file_get_contents)</p>';break;
 		case 4:$cache = '<p>Rendering from Couch Database</p>'; break;
 		}
 
 		return $cache .
-			"<em>Memory use: " . round(memory_get_usage() / 1024) . 'k'. "</em></p> <p><em>Load time : "
+			"<em>Memory use: " . round(memory_get_usage() / 1024) . 'k'. "</em> <p><em>Load time : "
 	. sprintf("%.4f", (((float) array_sum(explode(' ',microtime())))-$this->start_time)) . " seconds</em></p><p><em>Overhead memory : ".$this->oh_memory." k</em></p>";
 
 	}
 	function build_concept($value,$c_name,$c_nui,$c_kind=NULL){
-		return '<li class="'.$value.'"><ul><li class="conceptName">'. strtolower($c_name) . '</li><li class="nui"><a href="?n='.$c_nui. '">'. $c_nui. "</a></li></ul></li>\n";
+	// get method args nad do a str replace for ampersands?
+	
+		return '<li class="'.htmlentities($value).'"><ul><li class="conceptName">'. htmlentities(strtolower($c_name)) . '</li><li class="nui"><a href="?n='.$c_nui. '">'. $c_nui. "</a></li></ul></li>\n";
 	}
 
 	function post_check(){
@@ -579,7 +581,7 @@ class rxNormRef{
 					}
 				}
 		}
-		return "\n\t<ul>\n\t\t$return\n\t\t</ul>\n";
+		return htmlentities("\n\t<ul>\n\t\t$return\n\t\t</ul>\n");
 	}
 }
  new RxNormRef;
