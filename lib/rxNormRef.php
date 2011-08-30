@@ -199,6 +199,7 @@ class rxNormRef{
 											// these links need to be done better... all my paths need to be done better...
 											// group 'MESH' attributes
 												if($the_name=='RxNorm_CUI' || $the_name =='UMLS_CUI') $link = "../public/?".($the_name=='RxNorm_CUI'?'r':'u')."=$p_value";
+												//do check if it is a vandf field and to then first process it as xml to display it properly (sans cryptic tags) or use string replace function ?
 												$result .= "\n<li>\n<ul class='gProperty'>\n<li class='group_t'>".str_replace('_',' ',$the_name)." </li>\n<li class='gValue'>".($link?"<a href='$link'> $p_value</a>":strtolower($p_value))."</li>\n</ul>\n</li>";
 												}
 												
@@ -555,6 +556,7 @@ class rxNormRef{
 	}
 
 	function show_row($rowData){
+	// should combine this into the other existing row processor...
 		foreach($rowData as $key=>$value){
 			//echo $rowData->tty;
 			if($rowData->tty == 'DF') $disable_link = true;
@@ -565,6 +567,8 @@ class rxNormRef{
 			if(!in_array($key,$this->c_filter)){
 				if( (SUPPRESS_EMPTY_COL && $value == '')) ;
 				else{
+					$value = htmlentities($value);
+				
 					// adjust here for pretty URLS
 					// if(PRETTY_GET_URLS)
 					// also adjust for key on dose form - prevent does form rows from having rxcui/umlscui links
@@ -581,7 +585,7 @@ class rxNormRef{
 					}
 				}
 		}
-		return htmlentities("\n\t<ul>\n\t\t$return\n\t\t</ul>\n");
+		return "\n\t<ul>\n\t\t$return\n\t\t</ul>\n";
 	}
 }
  new RxNormRef;
