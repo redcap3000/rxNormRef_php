@@ -7,7 +7,8 @@
 		 <link rel="stylesheet" type="text/css" href="css/ndf.css" />
 <?php
 error_reporting(0);
-
+print_r($_POST);
+print_r($_GET);
 // <link rel="stylesheet" type="text/css" href="css/'.($_POST['css_wide']?'wide.css':'fixed_field.css').'" />
 
 if($_POST['property'] != '' ||$_POST['role'] != ''|| $_POST['association'] != ''   || $_POST['nui_a'] != '1')
@@ -19,8 +20,14 @@ if($_POST['property'] != '' ||$_POST['role'] != ''|| $_POST['association'] != ''
 	if($_POST['nui_a'] !='')unset($_POST['property'],$_POST['association'],$_POST['role']);
 }
 
-if($_GET['n']){
+if($_POST['nui']){
+unset($_GET);
+}
+
+if($_GET['n'] || $_GET['u']){
+//	unset($_POST);
 	$_POST['nui']=$_GET['n'];
+	$_POST['findConcepts'] = 'on';
 }
 
 function html_form($type,$array,$id,$label=true,$legend=true,$blank_item=true,$fieldset=true,$inner_container=NULL){
@@ -35,7 +42,7 @@ function html_form($type,$array,$id,$label=true,$legend=true,$blank_item=true,$f
 				$result.= '<option value="'.$prop.'" '.($_POST[$id] == $prop? " selected ":NULL).'>'. $select . '</option>';
 				break;
 			case "radio":
-				$result .= '<input type="radio" name="'.$id.'" id="scope_1" value="'.$prop.'" '.($_POST[$id] == $prop ? ' checked ':NULL).' /> '.($label==true?'<label for= "'.$prop.'">'.$select.'</label>':NULL);
+				$result .= '<input type="radio" name="'.$id.'" id="'.$id.'" value="'.$prop.'" '.($_POST[$id] == $prop ? ' checked ':NULL).' /> '.($label==true?'<label for= "'.$prop.'">'.$select.'</label>':NULL);
 				break;
 			}
 			if($inner_container !=NULL && is_array($inner_container)) $result .= $inner_container[0] . $result . $inner_container[1];
@@ -64,7 +71,8 @@ echo
 				<img src="img/rxnix_logo.gif" alt="rxnix logo"/>
 				<form method="post" action="" class="main_form">
 					<fieldset id="nui">
-						<label for="nui">Enter NUI</label>
+						<label for="nui">NDF Search</label>
+						
 							<input type="text" id="nui" title="Nui Entry1" name="nui"  '. ($_POST['nui']?' value = "'. $_POST['nui'] . '" ':NULL).' />'
 						;
 						
@@ -76,6 +84,12 @@ echo
   				// not quite supported but wanted to push to github...
 				//		echo '<input type="checkbox" name="advanced" id="advanced" '.($_POST['advanced'] != 'on' ?  NULL :' checked ' ).'/><label for="advanced">Advanced Search</label></fieldset>';
 						// also if advanced load the form class @!!
+						
+						//echo html_form('radio',array('By NUI'=>'byID','By Name'=>'byName'),'findConcepts',true,false);
+						echo '<input type="checkbox" name="findConcepts" id="findConcepts" '.($_POST['findConcepts'] == 'on' ? ' checked ':NULL ).'/><label for="findConcepts">Lookup NUI</label></fieldset>';
+						
+						echo '<fieldset><input type="checkbox" name="advanced" id="advanced" '.($_POST['advanced'] != 'on' ?  NULL :' checked ' ).'/><label for="advanced">Advanced Search</label></fieldset>';
+						
 						echo($_POST['advanced']!='on'?NULL:'<fieldset>'. 
 						'<em>Pick one*</em>
 			

@@ -76,7 +76,7 @@ class rxNormRef{
 
 	}
 	function build_concept($value,$c_name,$c_nui,$c_kind=NULL){
-		return '<li class="'.$value.'"><ul><li class="conceptName">'. strtolower($c_name) . '</li><li class="nui"><a href="?n='.$c_nui. '">'. $c_nui. "</a></li>\n";
+		return '<li class="'.$value.'"><ul><li class="conceptName">'. strtolower($c_name) . '</li><li class="nui"><a href="?n='.$c_nui. '">'. $c_nui. "</a></li></ul></li>\n";
 	}
 
 	function post_check(){
@@ -92,7 +92,7 @@ class rxNormRef{
 
 		if($_POST['nui']){
 		
-				self::loadNdf();
+				
 				// default to showing all info
 				// the result to cache (xml) is the result!!
 				// do a obcacher check to see if we cant get the XML back and avoid making the ndfApi call
@@ -112,16 +112,19 @@ class rxNormRef{
 					}
 
 					if(!$this->cache){
+						self::loadNdf();
 					// we could also just decode a refined object to store in a 'better/smaller' format??
 					// run curl in background??
 						if(COUCH) $this->ndfApi->setOutputType('json');
 						// this processing is for when people want to search by name or they click a link to search the term in RxNorm (COMING SOON!!)
-						if($_POST['findConcepts'] != 'on'){
+						if($_POST['findConcepts'] == 'on'){
 							$result = $this->ndfApi->findConceptsByName($_POST['nui'],'DRUG_KIND');
 							if(!COUCH && !$this->cache){
 								$result = new SimpleXMLElement($result);
+								$return .= '<ul>';
 								foreach($result->xpath('groupConcepts/concept') as $ic)
-									$return .= '<ul><li>' . self::build_concept($ic->conceptKind,$ic->conceptName,$ic->conceptNui) . '</li></ul>';	
+									$return .=  self::build_concept($ic->conceptKind,$ic->conceptName,$ic->conceptNui)  ;	
+								$return .= '</ul>';
 							echo $return;
 							// exit the logical flow... 
 							return true;
@@ -130,7 +133,6 @@ class rxNormRef{
 						}else{
 						
 							if(COUCH){
-								
 								$result = $this->ndfApi->getAllInfo($_POST['nui']);
 							}else{
 								$result = $this->ndfApi->getAllInfo($_POST['nui']);
@@ -175,10 +177,10 @@ class rxNormRef{
 											if($key5=='conceptName') $c_concept_name = $value5;
 											elseif($key5=='conceptNui') $c_concept_nui = $value5;
 											elseif($key5=='conceptKind' && $value5 !='')
-												$result.= self::build_concept($value5,$c_concept_name,$c_concept_nui). "</ul>\n";
+												$result.= self::build_concept($value5,$c_concept_name,$c_concept_nui). "\n";
 									
 									}
-									if($result)echo "<li class='a_title'>Child Concepts</li>\n\n".	 $result . '</li><li>';
+									if($result)echo "<li class='a_title'>Child Concepts</li>\n\n".	 $result ;
 									
 								}elseif($key2 == 'groupProperties'){
 									unset($result);
@@ -195,7 +197,7 @@ class rxNormRef{
 											// these links need to be done better... all my paths need to be done better...
 											// group 'MESH' attributes
 												if($the_name=='RxNorm_CUI' || $the_name =='UMLS_CUI') $link = "../public/?".($the_name=='RxNorm_CUI'?'r':'u')."=$p_value";
-												$result .= "\n<li>\n<ul>\n<li class='$p_name'>".str_replace('_',' ',$the_name)." </li>\n<li>".($link?"<a href='$link'> $p_value</a>":strtolower($p_value))."</li>\n</ul>\n</li>";
+												$result .= "\n<li>\n<ul class='gProperty'>\n<li class='group_t'>".str_replace('_',' ',$the_name)." </li>\n<li class='gValue'>".($link?"<a href='$link'> $p_value</a>":strtolower($p_value))."</li>\n</ul>\n</li>";
 												}
 												
 										}
@@ -214,7 +216,7 @@ class rxNormRef{
 													if($roles_inner_key == 'conceptName') $roles_concept_name = strtolower($roles_inner_value);
 													elseif($roles_inner_key == 'conceptNui') $roles_nui = $roles_inner_value;
 													else
-														$result .= "<li><ul><li class='$roles_inner_value'>$master_role $roles_concept_name</li><li class='nui'><a href='?n=$roles_nui'>$roles_nui</a></li></ul></li>";
+														$result .= "\n<li>\n<ul>\n<li class='$roles_inner_value'>$master_role $roles_concept_name</li>\n<li class='nui'><a href='?n=$roles_nui'>$roles_nui</a></li>\n</ul>\n</li>\n";
 												
 											}else
 												$master_role = str_replace('_',' ',$roles2);
@@ -513,8 +515,9 @@ class rxNormRef{
 		foreach($xml as $value){
 		// second row avoids displaying the parameter name for subsequent rows
 		// parent name is used to determine what columns to display (rather than parse the xml object)
-			$tty = $value->tty;
-			$tty= (self::$normalElements[strtoupper($tty)]?self::$normalElements[strtoupper($tty)]:$tty);
+			$tty2 = $value->tty;
+			
+			$tty= (self::$normalElements[strtoupper($tty2)]?self::$normalElements[strtoupper($tty2)]:$tty2);
 
 			echo ($value->conceptProperties || $value->name ?"\n\t<ul>\n\t\t<li class='property'>$tty</li>\n\t</ul>":NULL);
 			
@@ -528,7 +531,7 @@ class rxNormRef{
 			}
 			// often the RxNorm api will return duplicate rows. This hopefully ensures that two records next to eachother
 			// that are identical do not get displayed
-			if($result != $old_result) echo "\n\t<ul>\n<li>".$result."</li>\n</ul>\n";
+			if($result != $old_result) echo "\n\t<ul>\n<li>". $result. "</li>\n</ul>\n";
 			$old_result = $result;
 			}	
 		}else{
@@ -551,9 +554,12 @@ class rxNormRef{
 
 	function show_row($rowData){
 		foreach($rowData as $key=>$value){
-			
+			//echo $rowData->tty;
 			if($rowData->tty == 'DF') $disable_link = true;
 			else $disable_link= false;
+			
+			
+			
 			if(!in_array($key,$this->c_filter)){
 				if( (SUPPRESS_EMPTY_COL && $value == '')) ;
 				else{
@@ -561,8 +567,15 @@ class rxNormRef{
 					// if(PRETTY_GET_URLS)
 					// also adjust for key on dose form - prevent does form rows from having rxcui/umlscui links
 					if(($key == 'rxcui' || $key == 'umlscui') && !$disable_link) $return .= "\n\t". '<li class="record_'.$key.'">'. "<a href='?".($key=='rxcui'?'r':'u')."=$value'>" .($key=='umlscui' && $value =='' && !$disable_link?'n/a':$value) . "</a></li>";
-					else
-						$return .= "\n\t". '<li class="record_'.$key.'">'. ($key=='umlscui' && $value ==''?'n/a':$value) . "</li>"; 
+					
+					else{
+						if($rowData->tty == 'IN'){
+							$return .= "\n\t". '<li class="record_'.$key.'"><a href="ndf.php?s='. $value.'">'.$value.'</a></li>'; 
+						}else{
+					
+							$return .= "\n\t". '<li class="record_'.$key.'">'. ($rowData->tty=='IN'?'<a href="ndf.php?s='. $result.'">' :NULL) .($key=='umlscui' && $value ==''?'n/a':$value).($rowData->tty=='IN'?'</a>':NULL) . "</li>"; 
+						}
+						}
 					}
 				}
 		}
