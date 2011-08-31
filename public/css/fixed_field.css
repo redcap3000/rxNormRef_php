@@ -1,12 +1,10 @@
-/* @override http://myparse.net/sb5/public/css/fixed_field.css */
-
 
 html{
 	font-family: Arial, san-serif;
 }
 
 #header{
-	padding: 20px 0;
+
 	height: auto;
 }
 
@@ -22,9 +20,13 @@ html{
 }
 
 #header form.main_form fieldset ul li {
-	width: 15em;float: left;
+	width: 20em;float: left;
+margin-top: 2em;
 }
-
+#header a{
+	font-size: 1em;float: right;
+	margin-top: .2em;margin-right: 1em;
+}
 a{
 	text-decoration: none;
 }
