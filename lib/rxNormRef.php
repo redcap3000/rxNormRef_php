@@ -203,15 +203,13 @@ class rxNormRef{
 											elseif($p_value != ''){
 											// these links need to be done better... all my paths need to be done better...
 											// group 'MESH' attributes
-											//echo $the_name;
 												if($the_name=='RxNorm_CUI' || $the_name =='UMLS_CUI') $link = "../public/?".($the_name=='RxNorm_CUI'?'r':'u')."=$p_value";
+											// add extra names here	
 												elseif(in_array($the_name,array('Display_Name','RxNorm_Name'))){
-									
 														if($names){
-														
 															$p_value = strtolower($p_value);
 															$key_check = array_search ( $p_value , $names);
-															echo "\n$key_check";
+															
 															// remove _name from  the key each element except the last one
 															if($key_check){
 																	
@@ -273,15 +271,7 @@ class rxNormRef{
 					
 					}
 				
-				}
-		
-	// idea why not use relatedBy and allow for lookup by id in the same form?
-	// these are for array processing..
-		
-		
-		// form objects to make ... 'ndf' is a list of the available ID types (radio names are verbose, values are what is passed into the api library)
-		// also allow link for specific value types in the rxNorm api to jump to (find interactions ?)
-
+				}	
 		if(($_POST['ndf'] && ($_POST['r'] || $_POST['u'])) || $_POST['nui'] != ''){
 
 		if($_POST['nui'] != '')$nui2 = $_POST['nui'];
@@ -598,9 +588,6 @@ class rxNormRef{
 			//echo $rowData->tty;
 			if($rowData->tty == 'DF') $disable_link = true;
 			else $disable_link= false;
-			
-			
-			
 			if(!in_array($key,$this->c_filter)){
 				if( (SUPPRESS_EMPTY_COL && $value == '')) ;
 				else{
@@ -626,3 +613,4 @@ class rxNormRef{
 	}
 }
  new RxNormRef;
+ 
