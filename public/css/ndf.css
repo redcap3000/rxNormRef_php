@@ -1,3 +1,12 @@
+/* @override http://rxnix.com/rxNormRef_php/public/css/ndf.css */
+
+/* @override http://myparse.net/sb5/public/css/ndf.css */
+
+/* @override 
+	http://myparse.net/sb5/public/css/ndf.css
+	http://myparse.net/sb4/rxNormRef_php/public/css/ndf.css
+
+*/
 
 #ndf_content ul li.d_int_comment ul {
 width: 50em;clear: both;
@@ -175,13 +184,30 @@ img.bg_black{
 
 }
 
-
-#ndf_content ul li {margin: .0 .30em;
-width: 100%;
+#ndf_content ul ul ul ul ul ul ul li ul {
+	margin: 0 1.35em;
 }
+
+#ndf_content ul ul ul ul ul ul ul li ul {
+border: none;
+float: left;min-height
+}
+
+
+#ndf_content ul li {
+float: left;
+	margin: .0 .30em;
+}
+
+#ndf_content ul ul ul ul ul li.DRUG_KIND {
+	float: right;
+}
+
+
 
 #ndf_content ul li.DRUG_KIND ul {
 	padding: .5em;
+	margin:  .35em;
 
 	font-weight: bold;
 	font-size: 1.2em;
@@ -218,7 +244,10 @@ border-right: solid gray .25em;
 
 
 #ndf_content ul li.MECHANISM_OF_ACTION_KIND,#ndf_content ul li.PHYSIOLOGIC_EFFECT_KIND,#ndf_content ul li.DISEASE_KIND,#ndf_content ul li.INGREDIENT_KIND {
-	text-align: center;width: 97%;
+	min-height: 2.5em;
+	
+	text-align: center;
+	
 }
 
 
@@ -256,15 +285,16 @@ margin: 1.15em;float: left;
 }
 
 #ndf_content ul li.conceptName {
-	width: 18.5em;
+	width: 16.5em;
 	font-weight: bold;
+	min-height: 2.5em;
 }
 
 
 
 .a_title {font-size: 1.5em;padding: .8em 0 1.3em 0  ;
 	clear: both;
-	
+	float: left;width: 100%;
 	margin-bottom: 4.44em;
 
 	text-align: left; color: maroon;
