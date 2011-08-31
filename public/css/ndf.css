@@ -1,3 +1,5 @@
+/* @override http://rxnix.com/rxNormRef_php/public/css/ndf.css */
+
 /* @override http://myparse.net/sb5/public/css/ndf.css */
 
 /* @override 
@@ -9,7 +11,7 @@
 #ndf_content ul li.d_int_comment ul {
 width: 50em;clear: both;
 padding: 1em;
-margin-left: 4em;
+margin: 1em 0;
 
 }
 
@@ -170,19 +172,20 @@ img.bg_black{
 #ndf_content{
 	float: left;
 	clear: Both;
+	padding-bottom: 2em;
 }
 
 
 
 #ndf_content ul li ul {
-	float: left;width: 19.5em;
+	float: left;width: 15em;
 	border: solid black 1px;
+
 }
 
 
-#ndf_content ul li {margin: .25em;
+#ndf_content ul li {margin: .0 .30em;
 
-float: left;
 }
 
 #ndf_content ul li.DRUG_KIND ul {
@@ -210,8 +213,7 @@ float: left;
 
 li.group_t{
 	width: 13.76em;
-
-	padding: .55em;
+	padding: .05em 0;
 border-bottom: solid gray .25em;
 	color: maroon;
 	font-weight: bold;
@@ -258,7 +260,7 @@ va_file,va_ien {
 
 
 #ndf_content .gProperty{border: none;
-	float: left;width: 19.5em;
+margin: 1.15em;
 }
 
 #ndf_content ul li.conceptName {
@@ -268,12 +270,12 @@ va_file,va_ien {
 
 
 
-.a_title {font-size: 1.5em;padding: .8em 0 .3em 0  ;
-	width: 100%;
+.a_title {font-size: 1.5em;padding: .8em 0 1.3em 0  ;
 	clear: both;
-	margin-bottom: .44em;
-	padding-bottom: .44em;
-	border-bottom: solid maroon .15em;text-align: right;
+	
+	margin-bottom: 4.44em;
+
+	text-align: left; color: maroon;
 }
 
 
@@ -366,6 +368,4 @@ width: auto;
 	border: none;width: 6em;
 }
 
-ul.gProperty {
-float: left;
-}
+
