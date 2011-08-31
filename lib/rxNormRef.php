@@ -130,20 +130,25 @@ class rxNormRef{
 						// this processing is for when people want to search by name or they click a link to search the term in RxNorm (COMING SOON!!)
 						if($_POST['findConcepts'] != 'on'){
 							$result = $this->ndfApi->findConceptsByName($_POST['nui'],'DRUG_KIND');
-							
-							if(RENDER_MODE == 'json')
+											
+							if(RENDER_MODE == 'json'){
 								$result = json_decode($result);
-							else
+								
+								$result_count = $result->groupConcepts[0]->concept;
+								// figure out result count ...
+								}
+							else{
 								$result = new SimpleXMLElement($result);
+								$result_count = count($result->groupConcepts[0]);
+							
+							}
+							
 							
 							// switch result output based on xml or json...
-							if(is_a($result,'SimpleXMLElement'))
-								if(!$result->xpath('groupConcepts/concept') )
-									{ echo"<p class='term_result'>Term <em>" .$_POST['nui'] . "</em> did not return any matching concepts. Please check your spelling.</p>";
-										unset($result);
+							if($result_count == 0)
+								{ echo"<p class='term_result'>Term <em>" .$_POST['nui'] . "</em> did not return any matching concepts. Please check your spelling.</p>";
+									unset($result);
 									}
-							elseif(!$result->groupConcepts[0]->concept[0])
-									echo"<p class='term_result'>Term <em>" .$_POST['nui'] . "</em> did not return any matching concepts. Please check your spelling.</p>";
 									
 							
 							if(!COUCH && !$this->cache && $result){
@@ -204,11 +209,14 @@ class rxNormRef{
 					// to do reverse order of this stuff....
 				if($result){
 				//print_r($result);
+				// remake this ... please!
 					foreach($result as $key=>$value){
 						if($key=='fullConcept'){
 							foreach($value as $key2=>$value2){	
-								if($key2 == 'parentConcepts'){
-									echo '<ul><li class="a_title">Parent Concepts</li>' . "\n";
+							echo '<ul>';
+								if($key2 == 'parentConcepts' && $value2[0] != ''){
+
+									echo '<li class="a_title">Parent Concepts</li>' . "\n";
 									foreach($value2 as $key3=>$value3){
 										if(is_a($value3,'stdClass'))
 											$value3 = $value3->concept[0];
@@ -305,26 +313,41 @@ class rxNormRef{
 									// hummm...
 									// can only process a single  group role value for now :( due to bug in json structure
 									// still stores the whole record in the db or xml/json cache
-										$value2= $value2[0]->role[0];
-									}
-									unset($result);
 									
-									foreach($value2 as $roles)
-										foreach($roles as $roleName=>$roles2)
-											if($roleName == 'concept'){
-												//echo "<li class='a_title'>Concept</li>";
-												$roles_concept_name = '';
-												$roles_inner_value = '';
-												
-												foreach($roles2 as $roles_inner_key =>$roles_inner_value)
-													if($roles_inner_key == 'conceptName') $roles_concept_name = $roles_inner_value;
-													elseif($roles_inner_key == 'conceptNui') $roles_nui = $roles_inner_value;
-													else
-														$result .= "\n<li>\n<ul>\n<li class='$roles_inner_value'>$master_role $roles_concept_name</li>\n<li class='nui'><a href='?n=$roles_nui'>$roles_nui</a></li>\n</ul>\n</li>\n";
-												
-											}else
-												$master_role = str_replace('_',' ',$roles2);
-												//echo "<li class='$roleName'>$roles2</li>";
+									//	die(print_r($value2[0]->role));
+										//$value2= $value2[0];
+										$valueT = $value2[0]->role;
+										unset($result);
+										// weird json error... had to hack it to work forloops not liking the above value
+										foreach($valueT as $role){
+										//	die(print_r($role));
+											$result .="\n<li>\n<ul>\n<li class='".$role->concept[0]->conceptName."'>".str_replace('_',' ',$role->roleName). ' '. $role->concept[0]->conceptName."</li>\n<li class='nui'><a href='?n=".$role->concept[0]->conceptNui."'>".$role->concept[0]->conceptNui."</a></li>\n</ul>\n</li>\n";
+											
+											}
+										//$result_count = $result->groupConcepts[0]->concept;
+									}else{
+									
+										$valueT = $value2;
+										//die(print_r($valueT));
+										unset($result);
+										
+										foreach($valueT as $roles)
+											foreach($roles as $roleName=>$roles2)
+												if($roleName == 'concept'){
+													//echo "<li class='a_title'>Concept</li>";
+													$roles_concept_name = '';
+													$roles_inner_value = '';
+													
+													foreach($roles2 as $roles_inner_key =>$roles_inner_value)
+														if($roles_inner_key == 'conceptName') $roles_concept_name = $roles_inner_value;
+														elseif($roles_inner_key == 'conceptNui') $roles_nui = $roles_inner_value;
+														else
+															$result .= "\n<li>\n<ul>\n<li class='$roles_inner_value'>$master_role $roles_concept_name</li>\n<li class='nui'><a href='?n=$roles_nui'>$roles_nui</a></li>\n</ul>\n</li>\n";
+													
+												}else
+													$master_role = str_replace('_',' ',$roles2);
+													//echo "<li class='$roleName'>$roles2</li>";
+									}
 									
 									if($result)
 										echo '<li class="a_title">Group Roles</li>' . $result. '</ul>';
@@ -534,11 +557,11 @@ class rxNormRef{
 		if($cached == TRUE) return 0;
 		
 		
-
-		if(($_POST['searchTerm'] || $_POST['r'] || $_POST['u']) && !$cached) {
 		
+		if(($_POST['searchTerm'] || $_POST['r'] || $_POST['u']) && !$cached) {
 			// look up inside of defined cache location
 				if($_POST['id_lookup'] || $_POST['u']  || $_POST['r']){
+					
 						// add other types to support more lookup types through get variables/post
 					if($_POST['u']){
 						$id_type = 'UMLSCUI';
@@ -549,20 +572,53 @@ class rxNormRef{
 						$lookup = $_POST['r'];
 					}
 					self::loadRxNorm();
-					$xml = $this->api->findRxcuiByID($id_type,$lookup);
-					$xml = (new SimpleXMLElement($xml));
+					
+					if(RENDER_MODE == 'xml'){
+					
+						$xml = $this->api->findRxcuiByID($id_type,$lookup);
+						$xml = (new SimpleXMLElement($xml));
+						$id = $xml->idGroup->rxnormId;
+					}else{
+						
+						$this->api->setOutputType('json');
+						$xml = $this->api->findRxcuiByID($id_type,$lookup);
+						
+						$xml = json_decode($xml);
+						
+					//	die(print_r($xml->idGroup->rxnormId[0]));
+						// may have multiples :/
+						$id = $xml->idGroup->rxnormId[0];
+						//die($id);
+						
+					}
+					
 					// INSERT INTO id_lookup values (p_token,rxcuid,umlscui,term_name) values ('obcer::cache_token()',$id,$uml,$term)
-					$id = $xml->idGroup->rxnormId;
+					
 					// do we have a umlid in here??
 				}elseif(!$_POST['extra'] && !$_POST['r'] && !$_POST['u']){
+				
 					self::loadRxNorm();
 					// if we have post extra than we can skip and set id properly?
+					
+					// this doesn't support json does it ??
+					
 					$xml = new SimpleXMLElement($this->api->findRxcuiByString($_POST['searchTerm']));
 					$id = $xml->idGroup->rxnormId;
 				}
+				
+				
+				
+				
 				if($id != '' && !$_POST['extra'] && !$_POST['r'] && !$_POST['u']) {
+				
+				
+				
 					echo '<p class="term_result">Term "<em>'. $_POST['searchTerm'] . ($_POST['id_lookup']? " of ID type " . $_POST['id_lookup'] : NULL) . '</em>" matches RXCUI: <em>' .$id . "</em></p>\n" ;
 					self::loadRxNorm();
+					
+					
+					
+					
 				}
 				elseif(!$_POST['extra'] && !$_POST['r'] && !$_POST['u'] ){
 					//self::loadRxNorm();
@@ -585,7 +641,7 @@ class rxNormRef{
 						$_POST['searchTerm'] =$first;
 						//unset($xml);
 					}
-				}elseif($_POST['r']){
+				}elseif($_POST['r'] && !$id){
 				
 					$id= trim($_POST['r']);
 						
@@ -637,6 +693,8 @@ class rxNormRef{
 	}
 	function make_xml($id,$formatted=false){
 	
+	
+	
 		if(COUCH && !$this->cache){
 			$xml = self::couchCheck();
 			$this->api->setOutputType('json');
@@ -662,20 +720,73 @@ class rxNormRef{
 		
 	if($formatted && !$this->cache){
 			self::loadRxNorm();
-			$xml = ($_POST['relatedBy']?$this->api->getRelatedByRelationship("$formatted","$id"):$this->api->getRelatedByType("$formatted","$id"));
+				if(RENDER_MODE != 'xml') $this->api->setOutputType('json');
+				$xml = ($_POST['relatedBy']?$this->api->getRelatedByRelationship("$formatted","$id"):$this->api->getRelatedByType("$formatted","$id"));
 			}
 		elseif(!$this->cache){
+		
+		
 			self::loadRxNorm();
+			
+			
+			
+			if(RENDER_MODE != 'xml') $this->api->setOutputType('json');
+			
 			$xml = $this->api->getAllRelatedInfo($id);
+			
+			
+			
+			if(RENDER_MODE != 'xml'){
+			
+				$check = json_decode($xml);
+				
+				$check2 = $check->allRelatedGroup->conceptGroup;
+				
+			//	die(print_r($check));
+				
+				foreach($check2 as $object){
+					if($count > 1)
+						$count = (count((array)$object));
+				}
+				
+				
+			}
+			else{
+				$check = new SimpleXMLElement($xml);
+				foreach($check->allRelatedGroup->conceptGroup as $conceptGroup){
+				
+					$count = count($conceptGroup);
+				}
+			
+			}
+
+			if($count == 1){
+				echo  ('Record did not return any matching RxNorm records');
+				return false;
+			}else{
+				if(COUCH && !$this->cache)$xml = self::put_couch($xml);
+
+				$return = $check;
+				
+			
+			}
+			
+			
+			//die(print_r($check->allRelatedGroup->conceptGroup));
+			
 		}
 	
-	
-	if(COUCH && !$this->cache)$xml = self::put_couch($xml);
 
-	$return = ((XML_URL_ACCESS && CACHE_XML) || COUCH ?$xml:new SimpleXMLElement($xml));
+	
+	
+
+	if(RENDER_MODE == 'xml'){
+		
 			
-	if(CACHE_XML && !$this->cache && !COUCH) file_put_contents("$put_file", $return->asXML());		
-			
+		if(CACHE_XML && !$this->cache && !COUCH) file_put_contents("$put_file", $return->asXML());
+		
+		}
+	
 	return $return;
 		 }
 
