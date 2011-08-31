@@ -73,8 +73,8 @@ echo '<link rel="stylesheet" type="text/css" href="css/'.($_POST['css_wide']?'wi
 						</li>
 						<li><a href='./' alt='Simple Search'>Simple Search</a></li>
 					</ul>
-					":"<fieldset><ul><li><input type='text' title='Search Query' name='searchTerm' ". ($_POST['searchTerm']?' value = "'. $_POST['searchTerm'] . '" ':NULL)." />
-						<input type ='submit' title='Search' /><a href='ndf.php'>Search NDF</a></li></ul></fieldset>")."
+					":"<ul><li><input type='text' title='Search Query' name='searchTerm' ". ($_POST['searchTerm']?' value = "'. $_POST['searchTerm'] . '" ':NULL)." />
+						<input type ='submit' title='Search' /><a href='ndf.php'>Search NDF</a></li></ul>")."
         </form>
         </div>
 		<div id ='content'>";

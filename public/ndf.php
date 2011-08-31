@@ -36,7 +36,7 @@ echo
     	<div id = "header">
 				<img src="img/new_logo.gif" alt="rxnix logo"/>
 				<form method="post" action="" class="main_form">
-					<fieldset>
+				
 							<input type="text" id="nui" title="Nui Entry1" name="nui"  '. ($_POST['nui']?' value = "'. $_POST['nui'] . '" ':NULL).' />'
 							
 						;
@@ -87,7 +87,7 @@ echo
 						<input type="checkbox" name="trans" id="trans" '.($_POST['trans'] != 'on' ?  NULL :' checked = "checked" ' ).'/><label for="trans">Transitive</label></fieldset>
 					').
 					'<a href="/">Search RxNorm</a><input type="submit"/>
-					</fieldset>
+					
 	  		</form>
 			</div>
 		<div id ="ndf_content">';

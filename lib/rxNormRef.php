@@ -210,10 +210,11 @@ class rxNormRef{
 				if($result){
 				//print_r($result);
 				// remake this ... please!
+				echo '<ul>';
 					foreach($result as $key=>$value){
 						if($key=='fullConcept'){
 							foreach($value as $key2=>$value2){	
-							echo '<ul>';
+							
 								if($key2 == 'parentConcepts' && $value2[0] != ''){
 
 									echo '<li class="a_title">Parent Concepts</li>' . "\n";
@@ -432,7 +433,7 @@ class rxNormRef{
 					
 					}
 					
-					echo "</li></ul>";
+					echo "</ul>";
 					}
 					
 					else{
