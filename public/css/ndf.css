@@ -1,10 +1,45 @@
+/* @override 
+	http://myparse.net/sb5/public/css/ndf.css
+	http://myparse.net/sb4/rxNormRef_php/public/css/ndf.css
+
+*/
+
+#ndf_content ul li.d_int_comment ul {
+width: 50em;clear: both;
+padding: 1em;
+margin-left: 4em;
+
+}
+
+
+
+#ndf_content ul li.interacting_drug ul {
+border: none;}
+
+#ndf_content ul li.interacting_drug ul li.nui {
+	border: none; width: auto;float: left;
+}
+
+va_status,vandf_record{
+padding: .25em;
+}
+
+
+
 html{
 	font-family: Arial, san-serif;
 }
 
+#header img{
+	
+	display:none;
+}
+
 #header{
-	padding: 20px 0;
-	height: auto;
+	width: 100%;
+float: left;
+	height: 13em;
+	background: url(http://myparse.net/sb5/public/img/new_logo.gif) no-repeat;
 }
 
 #header h1{
@@ -47,11 +82,27 @@ a:hover{
 	text-align: center;
 }
 
-#header form.main_form {
-	margin-top: -4em;
-	width: 52em;
-	margin-left: 8em;
+#header form.main_form{
+font-size: 1.3em;
+margin-left: 20em;
+margin-top: 4em;
 }
+
+#header form.main_form fieldset legend {
+	margin-left: -3.14em;
+	padding: 0 1em;
+	color: maroon;
+float: left;
+}
+
+#header form.main_form fieldset input {
+	margin: 0 1em;
+}
+
+#header form.main_form fieldset label {
+	font-size: .80em;
+}
+
 
 
 
@@ -63,7 +114,8 @@ fieldset#nui_opt{
 }
 
 fieldset#nui_opt,fieldset#nui,#header form.main_form fieldset {
-	border: none;;
+	border: none;
+	
 }
 
 fieldset#scope {margin: 0;padding: 0;
@@ -117,14 +169,21 @@ img.bg_black{
 
 
 #ndf_content ul li ul {
-	float: left;width: 19em;
+	float: left;width: 19.5em;
 	border: solid black 1px;
 }
 
 
-#ndf_content ul li {margin: .55em;
+#ndf_content ul li {margin: .25em;
 
 float: left;
+}
+
+#ndf_content ul li.DRUG_KIND ul {
+	padding: .5em;
+
+	font-weight: bold;
+	font-size: 1.2em;
 }
 
 
@@ -132,8 +191,8 @@ float: left;
 
 
 #ndf_content ul li ul.gProperty li.gValue {
-	margin-top: 1.1em;
-	font-size: 1.2em;
+	margin-top: .7em;width: 14.5em;
+	font-size: 1.2em;clear: both;
 }
 
 
@@ -144,15 +203,15 @@ float: left;
 }
 
 li.group_t{
-	min-width: 7.9em;
-	padding: .55em;
+	width: 13.76em;
 
-	border-bottom: solid black .25em;
+	padding: .55em;
+border-bottom: solid gray .25em;
 	color: maroon;
 	font-weight: bold;
 	font-size: 1.2em;
-text-align:right;
-border-right: solid black .25em;
+text-align:left;
+border-right: solid gray .25em;
 }
 
 
@@ -192,12 +251,13 @@ va_file,va_ien {
 }
 
 
-#ndf_content .gProperty{
-	float: left;width: 28.9em;
+#ndf_content .gProperty{border: none;
+	float: left;width: 19.5em;
 }
 
 #ndf_content ul li.conceptName {
 	width: 18.5em;
+	font-weight: bold;
 }
 
 
@@ -206,7 +266,8 @@ va_file,va_ien {
 	width: 100%;
 	clear: both;
 	margin-bottom: .44em;
-	border-bottom: solid maroon .35em;
+	padding-bottom: .44em;
+	border-bottom: solid maroon .15em;text-align: right;
 }
 
 
@@ -300,6 +361,5 @@ width: auto;
 }
 
 ul.gProperty {
-	width: 20em;
 float: left;
 }
