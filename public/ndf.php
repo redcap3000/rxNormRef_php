@@ -86,7 +86,7 @@ echo
 						.'
 						<input type="checkbox" name="trans" id="trans" '.($_POST['trans'] != 'on' ?  NULL :' checked = "checked" ' ).'/><label for="trans">Transitive</label></fieldset>
 					').
-					'<a href="./">Search RxNorm</a><input type="submit"/>
+					'<a href="./index.php">Search RxNorm</a><input type="submit"/>
 					
 	  		</form>
 			</div>
