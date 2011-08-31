@@ -20,8 +20,28 @@ class obcer{
 			return (HIDE_CACHE && $settings != 'db'?'.':NULL).($token2?implode('__',$token):implode('_',$token).'_a');
 		}
 	}
+
+	function cascade_token(){
+		// returns a token that is cascaded out - values that are equal to -'on','true' are ignored 
+		// for storing cache files in a file system with directories as post key values
+		// makes for more organized storage and hopefully faster file lookups (file_exists looking through a folder with 10,000 files vs. 1,000)
+		
+		// the order of the post var is kinda tricky ...
+		foreach($_POST as $key=>$value)
+			if(!is_array($value) && !is_object($value)){
+				$end_path []= (FILE_CACHE_HIDE_DIR? '.' : NULL) .$key;
+				$file_name []=$value;
+			}elseif(is_array($value) || is_object($value))
+				foreach($value as $loc=>$item)
+					$file_name []= $item;
+		$file_name = (is_array($file_name) ? implode('/',$end_path) .'/'. implode('_',$file_name) : implode('/',$end_path)) ;
+		// remove 'on' or 'true' from the final file name.. should make this more rhobust or provide a class variable that tells it what to strip  
+		return str_replace(array('_on_','_on','on_','_true','_true_','true_'),array(''),$file_name);
+	}
 	
 	static function ob_cacher($stop=NULL){
+	// implement HTML file caching here
+	// move the other query checks here for couch etc. ?
 		if(PROGRESSIVE_LOAD){		
 			if(CACHE_QUERY && $stop){
 				$put_file = CACHE_STORE . self::cache_token();

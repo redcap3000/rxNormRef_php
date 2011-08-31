@@ -78,7 +78,7 @@ class rxNormRef{
 	function build_concept($value,$c_name,$c_nui,$c_kind=NULL){
 	// get method args nad do a str replace for ampersands?
 	
-		return '<li class="'.htmlentities($value).'"><ul><li class="conceptName">'. htmlentities(strtolower($c_name)) . '</li><li class="nui"><a href="?n='.$c_nui. '">'. $c_nui. "</a></li></ul></li>\n";
+		return '<li class="'.htmlentities($value).'"><ul><li class="conceptName">'. htmlentities(ucwords(strtolower($c_name))) . '</li><li class="nui"><a href="?n='.$c_nui. '">'. $c_nui. "</a></li></ul></li>\n";
 	}
 
 	function post_check(){
@@ -163,7 +163,7 @@ class rxNormRef{
 											elseif($key4=='conceptNui') $p_concept_nui = $value4;
 											elseif($key4=='conceptKind')
 												self::build_concept($value4,$p_concept_name,$p_concept_nui);
-												echo '<li class="'.$value4.'"><ul><li class="conceptName">'. strtolower($p_concept_name) . '</li><li class="nui"><a href="?n='.$p_concept_nui.'">'.$p_concept_nui. "</a></li>\n";
+												echo '<li class="'.$value4.'"><ul><li class="conceptName">'. ucwords(strtolower($p_concept_name)) . '</li><li class="nui"><a href="?n='.$p_concept_nui.'">'.$p_concept_nui. "</a></li>\n";
 										echo '</ul></li>';
 									}
 								}elseif($key2 == 'childConcepts'){
@@ -190,18 +190,55 @@ class rxNormRef{
 									if(is_a($value2[0],'stdClass')){
 										$value2 = $value2[0]->property;
 									}
-									
+									unset($names);
+										unset($vandf);
 									foreach($value2 as $item)
+									{
+										// often names are identical.. do a check and combine the fields for the names and render it its own element
+										
+										
 										foreach($item as $p_name=>$p_value){
 											unset($link);
 											if($p_name == 'propertyName') $the_name = $p_value;
 											elseif($p_value != ''){
 											// these links need to be done better... all my paths need to be done better...
 											// group 'MESH' attributes
+											//echo $the_name;
 												if($the_name=='RxNorm_CUI' || $the_name =='UMLS_CUI') $link = "../public/?".($the_name=='RxNorm_CUI'?'r':'u')."=$p_value";
-												//do check if it is a vandf field and to then first process it as xml to display it properly (sans cryptic tags) or use string replace function ?
-												$result .= "\n<li>\n<ul class='gProperty'>\n<li class='group_t'>".str_replace('_',' ',$the_name)." </li>\n<li class='gValue'>".($link?"<a href='$link'> $p_value</a>":strtolower($p_value))."</li>\n</ul>\n</li>";
+												elseif(in_array($the_name,array('Display_Name','RxNorm_Name'))){
+									
+														if($names){
+														
+															$p_value = strtolower($p_value);
+															$key_check = array_search ( $p_value , $names);
+															echo "\n$key_check";
+															// remove _name from  the key each element except the last one
+															if($key_check){
+																	
+																// value exists append the key check value to the key with a comma
+																	$names["$the_name,$key_check"]=$p_value;
+																
+																}
+															}else{
+															$names["$the_name"] = strtolower("$p_value");
+														}
+													}
+													// missing a few vandf settings that may be xml add as encountered...
+													elseif(in_array($the_name,array('VANDF_Record','VANDF_Record'))){
+													// do xml processing
+														$p_value = str_replace(array("<$the_name>",'<VA_File>','<VA_IEN>',"</$the_name>",'</VA_IEN>','</VA_File>'),
+																			   array('<em>','<em><strong>VA File</strong> ','<em><strong>VA IEN</strong> ','</em><br/>','</em><br/>','</em><br/>','</em>'),"$p_value");
+														$vandf["$the_name"] = $p_value;
+														
+													}
+												
+												elseif($the_name != 'FDA_UNII'){
+													$p_value = str_replace('_',' ',ucwords(strtolower($p_value)));
 												}
+												//do check if it is a vandf field and to then first process it as xml to display it properly (sans cryptic tags) or use string replace function ?
+												$result .= "\n<li>\n<ul class='gProperty'>\n<li class='group_t'>".str_replace('_',' ',$the_name)." </li>\n<li class='gValue'>".($link?"<a href='$link'> $p_value</a>":$p_value)."</li>\n</ul>\n</li>";
+												}
+									}
 												
 										}
 									if($result)echo '<li class="a_title">Group Properties</li>' . $result;	
@@ -216,7 +253,7 @@ class rxNormRef{
 												$roles_inner_value = '';
 												
 												foreach($roles2 as $roles_inner_key =>$roles_inner_value)
-													if($roles_inner_key == 'conceptName') $roles_concept_name = strtolower($roles_inner_value);
+													if($roles_inner_key == 'conceptName') $roles_concept_name = $roles_inner_value;
 													elseif($roles_inner_key == 'conceptNui') $roles_nui = $roles_inner_value;
 													else
 														$result .= "\n<li>\n<ul>\n<li class='$roles_inner_value'>$master_role $roles_concept_name</li>\n<li class='nui'><a href='?n=$roles_nui'>$roles_nui</a></li>\n</ul>\n</li>\n";
