@@ -122,26 +122,29 @@ class rxNormRef{
 					}
 
 					if(!$this->cache || $_POST['s']){
+					
 						self::loadNdf();
 					// we could also just decode a refined object to store in a 'better/smaller' format??
 					// run curl in background??
-						if(COUCH) $this->ndfApi->setOutputType('json');
+						if(COUCH || RENDER_MODE == 'json') $this->ndfApi->setOutputType('json');
 						// this processing is for when people want to search by name or they click a link to search the term in RxNorm (COMING SOON!!)
 						if($_POST['findConcepts'] != 'on'){
-							 
 							$result = $this->ndfApi->findConceptsByName($_POST['nui'],'DRUG_KIND');
 							
-							$result = self::r_check($result);
+							if(RENDER_MODE == 'json')
+								$result = json_decode($result);
+							else
+								$result = new SimpleXMLElement($result);
+							
 							// switch result output based on xml or json...
 							if(is_a($result,'SimpleXMLElement'))
-								if(!$result->xpath('groupConcepts/concept'))
-									{
-								
-									 echo"<p class='term_result'>Term <em>" .$_POST['nui'] . "</em> did not return any matching concepts. Please check your spelling.</p>";
+								if(!$result->xpath('groupConcepts/concept') )
+									{ echo"<p class='term_result'>Term <em>" .$_POST['nui'] . "</em> did not return any matching concepts. Please check your spelling.</p>";
 										unset($result);
-								//	return false;
-									
 									}
+							elseif(!$result->groupConcepts[0]->concept[0])
+									echo"<p class='term_result'>Term <em>" .$_POST['nui'] . "</em> did not return any matching concepts. Please check your spelling.</p>";
+									
 							
 							if(!COUCH && !$this->cache && $result){
 								//$result = new SimpleXMLElement($result);
@@ -151,8 +154,13 @@ class rxNormRef{
 								
 									foreach($result->xpath('groupConcepts/concept') as $ic)
 										$return .=  self::build_concept($ic->conceptKind,str_replace('_',' ',$ic->conceptKind) .' ' . $ic->conceptName,$ic->conceptNui)  ;	
-								$return .= '</ul>';
+								
+								}else{
+									foreach($result->groupConcepts[0]->concept as $ic)
+										$return .=  self::build_concept($ic->conceptKind,str_replace('_',' ',$ic->conceptKind) .' ' . $ic->conceptName,$ic->conceptNui)  ;
+								
 								}
+								$return .= '</ul>';
 								// do json processing...
 								
 							echo $return;
@@ -162,24 +170,40 @@ class rxNormRef{
 
 						}else{
 						// switches json and xml...
-							if(COUCH){
+							if(RENDER_MODE == 'json')
+								$this->ndfApi->setOutputType('json');
+						
 							
 								$result = $this->ndfApi->getAllInfo($_POST['nui']);
-							}else{
-								$result = $this->ndfApi->getAllInfo($_POST['nui']);
+							
+							if(RENDER_MODE =='xml'){
 								
 								$result = new SimpleXMLElement($result);
-							}
+								}
+							elseif(!is_object($result) && RENDER_MODE == 'json'){
+								
+								
+								$result = json_decode($result);
+								
+								}
 						}						
-						if(COUCH && $result) {
-							self::put_couch($result);
-							$result = json_decode($result);
+						if($result) {
+							if(COUCH) self::put_couch($result);
+							if(!is_object($result)){
+								
+								if('RENDER_MODE' == 'json')
+									$result = json_decode($result);
+								else{
+									$result = new SimpleXMLElement($result);
+									}
+								}
 						}
 					}
 				
 					// store this if it is a simple xml element ??
 					// to do reverse order of this stuff....
-				if($result)
+				if($result){
+				//print_r($result);
 					foreach($result as $key=>$value){
 						if($key=='fullConcept'){
 							foreach($value as $key2=>$value2){	
@@ -270,8 +294,19 @@ class rxNormRef{
 									}
 												
 										}
-									if($result)echo '<li class="a_title">Group Properties</li>' . $result;	
+									echo '<li class="a_title">Group Properties</li>' . $result;	
+									// this is where we go very wrong ...??
+									
 								}elseif($key2 == 'groupRoles'){
+								
+								// rewrite this completely to be like everything else ... please...
+									//
+									if(RENDER_MODE=='json'){
+									// hummm...
+									// can only process a single  group role value for now :( due to bug in json structure
+									// still stores the whole record in the db or xml/json cache
+										$value2= $value2[0]->role[0];
+									}
 									unset($result);
 									
 									foreach($value2 as $roles)
@@ -301,26 +336,39 @@ class rxNormRef{
 						
 					
 					}
-					
-					
-				if($_POST['drug_inter'] != 'on' && $result){
+					}
+				
+				if($_POST['drug_inter'] != 'on' && $result){	
+				// weird in a loop that this wont show if render mode is json?
 				//default it to show drug interactions for now...
 					self::loadNdf();
 					
 					if(RENDER_MODE=='json'){
+				
 						$this->ndfApi->setOutputType('json');
 					
 						//$this->ndfApi->setOutputType='json';
-						$drug_inter = $this->ndfApi->findDrugInteractions($_POST['nui'],3);
-						$drug_inter = json_decode($drug_inter);
+						
+						
 					//	die(print_r($drug_inter));
 						}
-						else{
-						$drug_inter = self::r_check($this->ndfApi->findDrugInteractions($_POST['nui'],3));
+						
+					$drug_inter = $this->ndfApi->findDrugInteractions($_POST['nui'],3);
+					
+					
+					if(RENDER_MODE=='json'){
+						$drug_inter = json_decode($drug_inter);
+					}
+					else{
+						
+					
+						$drug_inter = new SimpleXMLElement($drug_inter);
+						
 					}
 					// should return encode json object etc...
 
 					if(is_a($drug_inter,'SimpleXMLElement')){
+					
 						$drug_inter = $drug_inter->xpath('groupInteractions/interactions');
 					}else{
 					
@@ -329,15 +377,11 @@ class rxNormRef{
 					}
 					
 					
+					
 					if($drug_inter[0]){ 
 							$drug_inter = $drug_inter[0];
 						
-						}else{
-						// report that NUI doesn't have any reported interactions at this time...
-							unset($drug_inter);
-							
-					}
-					
+						
 					echo '
 <ul>
 <li class="a_title">Drug Interactions</li>
@@ -349,8 +393,8 @@ class rxNormRef{
 					
 					
 						foreach($drug_inter->groupInteractingDrugs->interactingDrug as $u){
-							if($u->concept->conceptName != '')
-								echo self::build_concept('interacting_drug',$u->concept->conceptName . ' (' . $u->severity . ')',$u->concept->conceptNui,$u->concept->conceptKind);
+							if($u->concept->conceptName != '' || $u->concept->conceptName)
+							echo self::build_concept('interacting_drug',$u->concept->conceptName . ' (' . $u->severity . ')',$u->concept->conceptNui,$u->concept->conceptKind);
 						}
 						
 					
@@ -366,7 +410,17 @@ class rxNormRef{
 					}
 					
 					echo "</li></ul>";
+					}
 					
+					else{
+					
+						
+					
+				//	echo 'hi';
+						// report that NUI doesn't have any reported interactions at this time...
+							unset($drug_inter);
+							
+					}
 					//die(print_r($drug_inter));
 				// could just add this to the result and store that instead of making more records ?
 				}	
