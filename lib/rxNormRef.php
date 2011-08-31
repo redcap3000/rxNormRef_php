@@ -80,6 +80,12 @@ class rxNormRef{
 	
 		return '<li class="'.htmlentities($value).'"><ul><li class="conceptName">'. htmlentities(ucwords(strtolower($c_name))) . '</li><li class="nui"><a href="?n='.$c_nui. '">'. $c_nui. "</a></li></ul></li>\n";
 	}
+	
+	function r_check($xml,$reverse=NULL){
+	// simply returns either simple xml element or json_decode object based on RENDER_MODE, mode can be overridden
+	// if provided will give the reverse of whatever the render mode is	
+		return ($reverse == NULL?(RENDER_MODE =='xml'?new SimpleXMLElement($xml):json_decode($xml)) : (RENDER_MODE == 'json'?new SimpleXMLElement($xml):json_decode($xml)));
+	}
 
 	function post_check(){
 	
@@ -87,12 +93,16 @@ class rxNormRef{
 				self::loadRxNorm();
 				$xml = $this->api->getDrugs($_POST['searchTerm']);
 				//unset($formatted);
-				$xml = new SimpleXMLElement($xml);
+				
+				$xml = self::r_check();
 // assumes user enters the correct spelling :(
+				// may need to return something else for json return ...
 				return self::list_2d_xmle($xml->drugGroup->conceptGroup);
 		}
 
 		if($_POST['nui']){
+				
+		
 				// default to showing all info
 				// the result to cache (xml) is the result!!
 				// do a obcacher check to see if we cant get the XML back and avoid making the ndfApi call
@@ -118,20 +128,40 @@ class rxNormRef{
 						if(COUCH) $this->ndfApi->setOutputType('json');
 						// this processing is for when people want to search by name or they click a link to search the term in RxNorm (COMING SOON!!)
 						if($_POST['findConcepts'] != 'on'){
-							
+							 
 							$result = $this->ndfApi->findConceptsByName($_POST['nui'],'DRUG_KIND');
-							if(!COUCH && !$this->cache){
-								$result = new SimpleXMLElement($result);
+							
+							$result = self::r_check($result);
+							// switch result output based on xml or json...
+							if(is_a($result,'SimpleXMLElement'))
+								if(!$result->xpath('groupConcepts/concept'))
+									{
+								
+									 echo"<p class='term_result'>Term <em>" .$_POST['nui'] . "</em> did not return any matching concepts. Please check your spelling.</p>";
+										unset($result);
+								//	return false;
+									
+									}
+							
+							if(!COUCH && !$this->cache && $result){
+								//$result = new SimpleXMLElement($result);
 								$return .= '<ul>';
-								foreach($result->xpath('groupConcepts/concept') as $ic)
-									$return .=  self::build_concept($ic->conceptKind,$ic->conceptName,$ic->conceptNui)  ;	
+								
+								if(is_a($result,'SimpleXMLElement')){
+								
+									foreach($result->xpath('groupConcepts/concept') as $ic)
+										$return .=  self::build_concept($ic->conceptKind,str_replace('_',' ',$ic->conceptKind) .' ' . $ic->conceptName,$ic->conceptNui)  ;	
 								$return .= '</ul>';
+								}
+								// do json processing...
+								
 							echo $return;
 							// exit the logical flow... 
 							return true;
 							}
 
 						}else{
+						// switches json and xml...
 							if(COUCH){
 							
 								$result = $this->ndfApi->getAllInfo($_POST['nui']);
@@ -149,6 +179,7 @@ class rxNormRef{
 				
 					// store this if it is a simple xml element ??
 					// to do reverse order of this stuff....
+				if($result)
 					foreach($result as $key=>$value){
 						if($key=='fullConcept'){
 							foreach($value as $key2=>$value2){	
@@ -270,6 +301,45 @@ class rxNormRef{
 						
 					
 					}
+					
+					
+				if($_POST['drug_inter'] != 'on' && $result){
+				//default it to show drug interactions for now...
+					self::loadNdf();
+					$drug_inter = self::r_check($this->ndfApi->findDrugInteractions($_POST['nui'],3));
+					// should return encode json object etc...
+
+					if(is_a($drug_inter,'SimpleXMLElement')){
+						$drug_inter = $drug_inter->xpath('groupInteractions/interactions');
+					}
+					
+					
+					if($drug_inter[0]){ 
+							$drug_inter = $drug_inter[0];
+						}else{
+						// report that NUI doesn't have any reported interactions at this time...
+							unset($drug_inter);
+					}
+					
+					echo '
+<ul>
+<li class="a_title">Drug Interactions</li>
+<li class="d_int_comment"><ul><li>'.$drug_inter->comment."</li></ul></li>
+";
+					//	function build_concept($value,$c_name,$c_nui,$c_kind=NULL){
+					if($drug_inter->conceptName != '')
+						echo self::build_concept('interaction',$drug_inter->conceptName,$drug_inter->conceptNui,$drug_inter->conceptKind);
+					
+				
+					foreach($drug_inter->groupInteractingDrugs->interactingDrug as $u){
+						if($u->concept->conceptName != '')
+						echo self::build_concept('interacting_drug',$u->concept->conceptName . ' (' . $u->severity . ')',$u->concept->conceptNui,$u->concept->conceptKind);
+					}
+					echo "</li></ul>";
+				
+					//die(print_r($drug_inter));
+				// could just add this to the result and store that instead of making more records ?
+				}	
 				
 				}	
 		if(($_POST['ndf'] && ($_POST['r'] || $_POST['u'])) || $_POST['nui'] != ''){
@@ -378,6 +448,8 @@ class rxNormRef{
 		
 		// chacing isn't being done properly here for the basic searches .. we dont get in a couch check anywheres...
 		if($cached == TRUE) return 0;
+		
+		
 
 		if(($_POST['searchTerm'] || $_POST['r'] || $_POST['u']) && !$cached) {
 		
