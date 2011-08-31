@@ -1,3 +1,5 @@
+/* @override http://myparse.net/sb5/public/css/ndf.css */
+
 /* @override 
 	http://myparse.net/sb5/public/css/ndf.css
 	http://myparse.net/sb4/rxNormRef_php/public/css/ndf.css
@@ -35,8 +37,7 @@ html{
 	display:none;
 }
 
-#header{
-	width: 100%;
+#header{padding: 0;	width: 100%;
 float: left;
 	height: 13em;
 	background: url(http://myparse.net/sb5/public/img/new_logo.gif) no-repeat;
@@ -47,6 +48,11 @@ float: left;
 	font-weight: bold;
 	font-style: italic;
 	font-size: 2.5em;
+}
+
+#header a{
+	font-size: .75em;float: right;
+	margin-right: 9.5em;
 }
 
 #header form.main_form fieldset ul {
@@ -84,7 +90,7 @@ a:hover{
 
 #header form.main_form{
 font-size: 1.3em;
-margin-left: 20em;
+margin-left: 15em;
 margin-top: 4em;
 }
 
