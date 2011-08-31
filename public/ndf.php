@@ -37,9 +37,8 @@ echo
 				<img src="img/new_logo.gif" alt="rxnix logo"/>
 				<form method="post" action="" class="main_form">
 					<fieldset>
-						<legend>NDF Search</legend>
-						
 							<input type="text" id="nui" title="Nui Entry1" name="nui"  '. ($_POST['nui']?' value = "'. $_POST['nui'] . '" ':NULL).' />'
+							
 						;
 						
 						// to do make the select action check boxes for Child Concepts / Concept Properties / Parent Concepts ....
@@ -87,7 +86,7 @@ echo
 						.'
 						<input type="checkbox" name="trans" id="trans" '.($_POST['trans'] != 'on' ?  NULL :' checked = "checked" ' ).'/><label for="trans">Transitive</label></fieldset>
 					').
-					'<input type="submit"/>
+					'<a href="/">Search RxNorm</a><input type="submit"/>
 					</fieldset>
 	  		</form>
 			</div>
