@@ -170,6 +170,7 @@ img.bg_black{
 
 
 #ndf_content{
+	width: 100%;
 	float: left;
 	clear: Both;
 	padding-bottom: 2em;
@@ -178,14 +179,14 @@ img.bg_black{
 
 
 #ndf_content ul li ul {
-	float: left;width: 15em;
+	float: left;width: 17.8em;
 	border: solid black 1px;
 
 }
 
 
 #ndf_content ul li {margin: .0 .30em;
-
+width: 100%;
 }
 
 #ndf_content ul li.DRUG_KIND ul {
