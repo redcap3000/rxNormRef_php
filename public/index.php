@@ -6,7 +6,7 @@ echo '<link rel="stylesheet" type="text/css" href="css/'.($_POST['css_wide']?'wi
         <body>
         <div id ='page'>
         <div id = 'header'>
-        <img src='img/rxnix_logo.gif' alt='rxnix logo'/>
+        <img src='img/new_logo.gif' alt='rxnix logo'/>
            
     	<form method='post' action='' class='main_form'>
     	".    	
@@ -74,7 +74,7 @@ echo '<link rel="stylesheet" type="text/css" href="css/'.($_POST['css_wide']?'wi
 						<li><a href='./' alt='Simple Search'>Simple Search</a></li>
 					</ul>
 					":"<fieldset><ul><li><input type='text' title='Search Query' name='searchTerm' ". ($_POST['searchTerm']?' value = "'. $_POST['searchTerm'] . '" ':NULL)." />
-						<input type ='submit' title='Search' /><a href='?a=b' title='Filter Concepts'>Advanced Search</a></li></ul></fieldset>")."
+						<input type ='submit' title='Search' /><br/><a href='?a=b' title='Filter Concepts'>Advanced Search</a></li></ul></fieldset>")."
         </form>
         </div>
 		<div id ='content'>";

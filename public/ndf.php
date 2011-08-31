@@ -34,7 +34,7 @@ echo
 	<body>
   	<div id ="page">
     	<div id = "header">
-				<img src="img/rxnix_logo.gif" alt="rxnix logo"/>
+				<img src="img/new_logo.gif" alt="rxnix logo"/>
 				<form method="post" action="" class="main_form">
 					<fieldset>
 						<legend>NDF Search</legend>
@@ -52,7 +52,7 @@ echo
 						// also if advanced load the form class @!!
 						
 						//echo html_form('radio',array('By NUI'=>'byID','By Name'=>'byName'),'findConcepts',true,false);
-						echo '<input type="checkbox" name="findConcepts" id="findConcepts" '.($_POST['findConcepts'] == 'on' ? ' checked = "checked" ':NULL ).'/><label for="findConcepts">Lookup NUI</label></fieldset>';
+						echo '<input type="checkbox" name="findConcepts" id="findConcepts" '.($_POST['findConcepts'] == 'on' ? ' checked = "checked" ':NULL ).'/><label for="findConcepts">Lookup NUI</label>';
 						
 						//echo '<input type="checkbox" name="advanced" id="advanced" '.($_POST['advanced'] != 'on' ?  NULL :' checked = "checked" ' ).'/><label for="advanced">Advanced Search</label>';
 						
@@ -88,6 +88,7 @@ echo
 						<input type="checkbox" name="trans" id="trans" '.($_POST['trans'] != 'on' ?  NULL :' checked = "checked" ' ).'/><label for="trans">Transitive</label></fieldset>
 					').
 					'<input type="submit"/>
+					</fieldset>
 	  		</form>
 			</div>
 		<div id ="ndf_content">';
