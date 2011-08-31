@@ -1,12 +1,3 @@
-/* @override http://rxnix.com/rxNormRef_php/public/css/ndf.css */
-
-/* @override http://myparse.net/sb5/public/css/ndf.css */
-
-/* @override 
-	http://myparse.net/sb5/public/css/ndf.css
-	http://myparse.net/sb4/rxNormRef_php/public/css/ndf.css
-
-*/
 
 #ndf_content ul li.d_int_comment ul {
 width: 50em;clear: both;
@@ -261,7 +252,7 @@ va_file,va_ien {
 
 
 #ndf_content .gProperty{border: none;
-margin: 1.15em;
+margin: 1.15em;float: left;
 }
 
 #ndf_content ul li.conceptName {
