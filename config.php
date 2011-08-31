@@ -1,4 +1,7 @@
 <?php
+
+
+
 /* Bare Minimum Settings
 
 	For RxNormRef to work it must know where it is located on your server(BASE_ROOT),
@@ -9,9 +12,9 @@
 */
 
 // ex : /srv/www/yoursite.com/     ex: /var/www/
-define('SERVER_ROOT','/var/www/');
+define('SERVER_ROOT','/var/www/rxNormRef_php/public');
 
-define('BASE_URL','http://localhost/');
+define('BASE_URL','http://localhost/rxNormRef_php/public/');
 
 /* Runtime Options*/
 
@@ -26,10 +29,53 @@ define('COMPRESS_OUTPUT',false);
   Will be adding more features shortly...
 
   */
+  
+  
+ // echo level rendering 
+define('RENDER_MODE','xml');
+// define('RENDER_MODE','json');
+
+define('FILE_CACHE',false);
+
+// ideally you'll want to render as what you're file caching (if not html)
+
+// format of what gets stored to the filesystem (if render mode &file cache mode differ each must be converted)
+define('FILE_CACHE_MODE','xml');
+// replaces HIDE_FILE . doesn't rename existing files, but should/could with simple rn command
+define('FILE_CACHE_HIDE',true);
+
+
+
+define('FILE_CACHE_CASCADE',false);
+
+define('FILE_CACHE_CASCADE_DIR','cascade_cache/');
+
+define('FILE_CACHE_HIDE_DIR',true);
+// hide directories too?
+// if html mode is defined then rendermode is ignored when rendering from filesystem (die the existing html file)
+
+// define('FILE_CACHE_MODE','html');
+
+// support define('FILE_CACHE_MODE','all')
+// define('FILE_CACHE_MODE','json')
+// define('FILE_CACHE_MODE','json+xml')
+
+// you -can- keep a file and couch cache - may speed up database lookups to look inside a directory vs hitting the db
+
+// if couch cache true, and couch file cache supress true - empty files are stored instead of data.
+define('COUCH_FILE_CACHE_SUPRESS',true);
+
+define('COUCH_CACHE',false);
+
+
+// also store cache as xml to be processed as xml ? crazzyy .. 
+define('COUCH_CACHE_MODE','json');
+
+define('CACHE_MODE',false);
 
 define('COUCH',false);
-//define('COUCH_HOST','http://localhost:5984');
-//define('COUCH_DB','test');
+define('COUCH_HOST','http://localhost:5984');
+define('COUCH_DB','test');
 
 
 /* Cache Settings
@@ -45,7 +91,7 @@ define('COUCH',false);
 
 
 define('CACHE_XML',false);
-//define('XML_STORE','cache_xml/');
+define('XML_STORE','cache_xml/');
 
 // stores HTML output - faster but larger files
 define('CACHE_QUERY',false);
