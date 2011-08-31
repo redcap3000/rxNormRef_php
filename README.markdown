@@ -58,3 +58,15 @@ Upload files to web server.
 Files in public/ are to be accessed to the public (images,css,basic html). 
 
 Take care if these files are moved (update the paths to the lib folder in php files). 
+
+Using the App
+=============
+
+So the ndf search does not have a spelling suggestion feature, so it makes it very difficult to 'look up' concepts.
+Because of this I have made it so records that have ingridents will be links to search the NDF database.
+
+Also once you have accesed a valid NDF record you can easily navigate to other ndf and rxnorm records via generated links.
+
+Some json structures differ slightly from the xml stucture, so bear with me while I iron out the inconsistencies (excuse the messy code)...
+
+Some records exist in the database without spaces (but slashes) this causes some issues with html layout and page flow. 
