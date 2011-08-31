@@ -1,3 +1,5 @@
+/* @override http://myparse.net/sb5/public/css/fixed_field.css */
+
 
 html{
 	font-family: Arial, san-serif;
@@ -60,7 +62,11 @@ legend{
 
 .main_form fieldset{
 	border: none;
-	width: 10em;float: left;
+	width: 8em;float: left;
+}
+
+fieldset#records_type {
+	width:10em;
 }
 
 #help em{
@@ -71,7 +77,13 @@ legend{
 }
 
 #header form.main_form {
-	margin-left: 7em;width: 60em;
+	margin-top: -6em;
+	float: right;
+	margin-left: 7em;width: 40em;
+}
+
+fieldset#id_types {
+	width: 9em;
 }
 
 #page {
