@@ -306,37 +306,67 @@ class rxNormRef{
 				if($_POST['drug_inter'] != 'on' && $result){
 				//default it to show drug interactions for now...
 					self::loadNdf();
-					$drug_inter = self::r_check($this->ndfApi->findDrugInteractions($_POST['nui'],3));
+					
+					if(RENDER_MODE=='json'){
+						$this->ndfApi->setOutputType('json');
+					
+						//$this->ndfApi->setOutputType='json';
+						$drug_inter = $this->ndfApi->findDrugInteractions($_POST['nui'],3);
+						$drug_inter = json_decode($drug_inter);
+					//	die(print_r($drug_inter));
+						}
+						else{
+						$drug_inter = self::r_check($this->ndfApi->findDrugInteractions($_POST['nui'],3));
+					}
 					// should return encode json object etc...
 
 					if(is_a($drug_inter,'SimpleXMLElement')){
 						$drug_inter = $drug_inter->xpath('groupInteractions/interactions');
+					}else{
+					
+						$drug_inter = $drug_inter->groupInteractions->interactions;
+					//	die(print_r($drug_inter));
 					}
 					
 					
 					if($drug_inter[0]){ 
 							$drug_inter = $drug_inter[0];
+						
 						}else{
 						// report that NUI doesn't have any reported interactions at this time...
 							unset($drug_inter);
+							
 					}
 					
 					echo '
 <ul>
 <li class="a_title">Drug Interactions</li>
 <li class="d_int_comment"><ul><li>'.$drug_inter->comment."</li></ul></li>
-";
+";					if(RENDER_MODE == 'xml'){
 					//	function build_concept($value,$c_name,$c_nui,$c_kind=NULL){
 					if($drug_inter->conceptName != '')
 						echo self::build_concept('interaction',$drug_inter->conceptName,$drug_inter->conceptNui,$drug_inter->conceptKind);
 					
-				
-					foreach($drug_inter->groupInteractingDrugs->interactingDrug as $u){
-						if($u->concept->conceptName != '')
-						echo self::build_concept('interacting_drug',$u->concept->conceptName . ' (' . $u->severity . ')',$u->concept->conceptNui,$u->concept->conceptKind);
+					
+						foreach($drug_inter->groupInteractingDrugs->interactingDrug as $u){
+							if($u->concept->conceptName != '')
+								echo self::build_concept('interacting_drug',$u->concept->conceptName . ' (' . $u->severity . ')',$u->concept->conceptNui,$u->concept->conceptKind);
+						}
+						
+					
+					}else{
+						// json decode moves the object around a wee bit..
+						//print_r($drug_inter->groupInteractingDrugs[0]->interactingDrug);
+						foreach($drug_inter->groupInteractingDrugs[0]->interactingDrug as $u){
+							if($u->concept[0]->conceptName != '')
+								echo self::build_concept('interacting_drug',$u->concept[0]->conceptName . ' (' . $u->severity . ')',$u->concept[0]->conceptNui,$u->concept[0]->conceptKind);
+						}
+					
+					
 					}
+					
 					echo "</li></ul>";
-				
+					
 					//die(print_r($drug_inter));
 				// could just add this to the result and store that instead of making more records ?
 				}	
