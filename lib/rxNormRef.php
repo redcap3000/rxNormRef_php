@@ -574,7 +574,7 @@ class rxNormRef{
 					if($search->suggestionGroup->suggestionList->suggestion){
 						echo '<em>Did you mean?</em>' ;
 						foreach($search->suggestionGroup->suggestionList->suggestion as $loc=>$value)
-							echo "\n\t<strong class='suggestion'>$value</strong>\t\n";
+							echo "\n\t<strong class='suggestion'><a href='?s=$value'>$value</a></strong>\t\n";
 						// also if cache enabled check to see if the RXCUI file already exists?
 						$first = $search->suggestionGroup->suggestionList->suggestion[0] . '';
 						$xml= new SimpleXMLElement($this->api->findRxcuiByString($first));
