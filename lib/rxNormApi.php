@@ -1,4 +1,5 @@
 <?php
+
 // SOAP/REST ... implementing REST with SOAP style method selection. Enjoy! Only supports XML for now.
 // use _apiHelper($query path) instead of _request  for quick json support.
 class rxNormApi extends APIBaseClass{
