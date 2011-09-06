@@ -17,7 +17,7 @@ class obcer{
 					$token []= str_replace(' ','',strtolower(trim($value)));
 				}
 				// account for hidden file name if present (HIDE_CACHE), also adds 'allRelatedInfo' for specifying the default type if none is provided (via post).
-			return (HIDE_CACHE && $settings != 'db'?'.':NULL).($token2?implode('__',$token):implode('_',$token).'_a');
+			return (HIDE_CACHE && $settings != 'db'?'.':NULL).($token2 || $_POST['nui']?implode('__',$token):implode('_',$token).'_a');
 		}
 	}
 

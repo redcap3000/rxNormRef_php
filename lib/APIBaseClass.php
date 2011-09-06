@@ -41,7 +41,7 @@ class APIBaseClass {
 			echo 'Curl error: ' . curl_error($this->_http) . "\n";
 		} 
 		//curl_close($this->_http);
-		
+//		echo $result;		
 		return $result;
 		
 	}

@@ -1,3 +1,5 @@
+/* @override http://www.myparse.net/sb5/public/css/ndf.css */
+
 /* @override http://rxnix.com/rxNormRef_php/public/css/ndf.css */
 
 /* @override http://myparse.net/sb5/public/css/ndf.css */
@@ -179,8 +181,8 @@ img.bg_black{
 
 
 #ndf_content ul li ul {
-	float: left;width: 17em;
-	border: solid black 1px;
+	border-left: solid maroon 2em;
+	float: left; margin: .25em;padding-left: .25em;
 
 }
 
@@ -281,11 +283,20 @@ va_file,va_ien {
 
 
 #ndf_content .gProperty{border: none;
-margin: 1.15em;float: left;
+width: 18.0em;
+float: left;
+min-height: 5em;
+margin: .15em .35em;
+}
+
+#ndf_content ul li.gProperty strong {
+	width: 17.5em;margin-bottom: .5em;
+	float: left;
 }
 
 #ndf_content ul li.conceptName {
-	width: 16.5em;
+	width: 14.9em;
+	margin: 0 .55em;
 	font-weight: bold;
 	min-height: 2.5em;
 }

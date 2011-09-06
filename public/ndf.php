@@ -1,7 +1,6 @@
 <?php
 include('header.html');
 error_reporting(0);
-
 echo' <link rel="stylesheet" type="text/css" href="css/ndf.css" />';
 
 if($_POST['property'] != '' ||$_POST['role'] != ''|| $_POST['association'] != ''   || $_POST['nui_a'] != '1')
@@ -27,6 +26,7 @@ if($_GET['n'] ){
 	$_POST['nui'] = $_GET['n'];$_POST['findConcepts'] = 'on';
 }
 
+print_r($_POST);
 
 echo 
 		'            
