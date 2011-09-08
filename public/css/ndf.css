@@ -1,5 +1,7 @@
 /* @override http://www.myparse.net/sb5/public/css/ndf.css */
 
+/* @override http://www.myparse.net/sb5/public/css/ndf.css */
+
 /* @override http://rxnix.com/rxNormRef_php/public/css/ndf.css */
 
 /* @override http://myparse.net/sb5/public/css/ndf.css */
@@ -198,7 +200,22 @@ float: left;min-height
 
 #ndf_content ul li {
 float: left;
-	margin: .0 .30em;
+	margin: .0 .50em;
+}
+
+#ndf_content ul p {
+	width: 54em;
+	margin-left: 3em;
+}
+
+#ndf_content ul li.groupPropName{
+	width: 55.75em;
+	clear:both;
+	margin-left: 1em;
+	color: maroon;
+	style:bold;
+	line-height: 2em;
+	letter-spacing:.15em;
 }
 
 #ndf_content ul ul ul ul ul li.DRUG_KIND {

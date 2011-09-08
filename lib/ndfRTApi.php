@@ -15,8 +15,8 @@ class ndfRTApi extends APIBaseClass{
 
 
     public function setOutputType($type){
-                if($type != $this->output_type)
-                        $this->output_type = ($type != 'xml'?'json':'xml');
+              //  if($type != $this->output_type)
+                        $this->output_type = ($type);
         }
 	public function __construct($url=NULL)
 	{

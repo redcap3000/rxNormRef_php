@@ -108,74 +108,86 @@ class rxNormRef{
 
 
 	function procResult($result){
+	
+	if($result['fullConcept']) {
+		//$result['data'] = $result['fullConcept']; 
+		
+		$result['data'] = self::clean_ndf($result['fullConcept']);
+		unset($result['fullConcept']);
+		}
 	// pass it an object that has the 'data' field in the root of the object
 	// this is designed for JSON and will write the xml conversion to pass into here...
-		
 		foreach($result['data'] as $rdkey=>$rdvalue){
 			if(is_array($rdvalue)){
-				//unset($theRow);
-				//$theRow []= "\n<li class='a_title'>$rdkey</li>\n";
 				foreach($rdvalue as $inK=>$inV){
-
 					if(is_array($inV) && count($inV == 3) && $inV['conceptName'] != ''){
-						$theRow ["$inK"]= $this->build_concept(($rdkey == 'parentConcepts'?'pname':'cname'),str_replace(array("/",','),array(' / ',', ') ,trim($inV['conceptName'])),$inV['conceptNui'],$inV['conceptKind']);
+						$theRow ["$inK"]= $this->build_concept(($rdkey == 'parentConcepts'?'pname':'cname'),($rdkey=='groupRoles'?'Group Role: ':NULL) . str_replace(array("/",','),array(' / ',', ') ,trim($inV['conceptName'])),$inV['conceptNui'],$inV['conceptKind']);
 					}
 					elseif($rdkey=='groupProperties'){
 					
-						if ($inK == 'Display_Name'){
+						if ($inK == 'Display_Name' || $inK == 'label'){
+							if($inK == 'label'){
+								$inV = str_replace(array('/','[',']'),array(' / ','<br/><em>','</em>'),$inV);
+							}
 							$group_property_name = $inV;
+							
 						}
-						elseif(($inK == 'Synonym' && $inV == $group_property_name) || ($inK == 'label' && $inV == $group_property_name)){
+						elseif(($inK == 'Synonym' && $inV == $group_property_name) || ($inK == 'label' && $inV == $group_property_name) || ($inK == 'MeSH_Name' && $inV == $group_property_name) || ($inK == 'RxNorm_Name' && strtoupper($inV) == $group_property_name)  || ($inK == 'NUI' || $inK == 'kind') || $inK == 'VANDF_Record'){
 						// if they synonym is equal to the property name don't show it...
 							;
-						}elseif($inK == 'kind'){
-							$group_kind = $inV;
 						}
-						elseif($inK == 'NUI'){
-						;
-						}
+						
 						elseif($inK == 'Level'){
 							$group_level = $inV;
-						}elseif($inK == 'VANDF_Record'){
-						// disabling this support for now .. its XML :(
-							;
 						}elseif($inK == 'Status'){
 							$group_status = $inV;
 						}
+						elseif($inK == 'MeSH_Definition'){
+							$mesh_def = $inV;
+						}elseif($inK == 'Synonym'){
+							if(!$sym)
+								$sym = $inV;
+							else{
+								$sym .= ", $inV";
+								}
+						}
 						else{
 					
-						$inV = ucwords(str_replace(array("/",','),array(' / ',', '),strtolower(trim($inV))));
-						$theRow ['groupProperties'][]= "\t\t<li class='gProperty'><strong>" . str_replace('_',' ',$inK) . '</strong> ' . (!in_array($inK,array('RxNorm_CUI','NUI','UMLS_CUI','code'))?strtolower($inV):$inV) . '</li>';
+					//	$inV = ucwords(str_replace(array("/",','),array(' / ',', '),strtolower(trim($inV))));
+					//	$theRow ['groupProperties'][]= "\t\t<li class='gProperty'><strong>" . str_replace('_',' ',$inK) . '</strong> ' . (!in_array($inK,array('RxNorm_CUI','NUI','UMLS_CUI','code','MeSH_CUI','MeSH_DUI','FDA_UNII'))?strtolower($inV):$inV) . '</li>';
 						}
 					}elseif($rdkey=='parentConcepts' && count($rdvalue)==3){
 					// also remove slashes and replace with a space, or slashes with a space (since a lot of slashes do not have spaces and mess up css layout)
 						$theRow ['parentConcepts'][]= $this->build_concept('pConcept',$rdvalue['conceptName'],$rdvalue['conceptNui'],$rdvalue['conceptKind']);
-						}
+					}	
 				}
-
 			}
 
 	}
 	
 			// wanted to show group properties first ...
 			
-			if($group_property_name)
-				echo "<ul><li class='groupPropName'><h1>$group_property_name</h1>" . ($group_kind?"<h2>".ucwords(strtolower(str_replace(array('_KIND','_'),array('',' '),$group_kind))):NULL) . ($group_level?":$group_level</h2>":'</h2>') . ($group_status?"<h3>$group_status</h3>":NULL).'</li></ul>'  ;
-			
-			if($theRow['groupProperties']){
-			
-				echo self::echoProp($theRow['groupProperties'],true);
-				unset($theRow['groupProperties']);
-			}
-			echo 'h1>Related Concepts</h1>';
-			echo self::echoProp($theRow);
-
+		if($group_property_name){
+			echo "<ul><li class='groupPropName'><h2>".ucwords(strtolower($group_property_name)).  ($group_level?" : $group_level</h2>" : '</h2>') .'</li>'. ($group_status?"<h3>$group_status</h3>":NULL). ($mesh_def?"<p>$mesh_def</p>":NULL)  . ($sym?"<br/><strong>Synonyms: </strong>$sym":NULL) . '</li></ul>'  ;
+	
+	//	if($theRow['groupProperties']){
 		
-}
+	//		echo self::echoProp($theRow['groupProperties']);
+	//		unset($theRow['groupProperties']);
+	//	}
+			
+				echo '<ul><li class="groupPropName"><h3>Related Concepts</h3></li></ul>';
+				echo self::echoProp($theRow);
+		}else{
+			echo '<ul><li class="groupPropName"><h2>No Record</h2><p>A record could not be found for the corresponding NUI, please check back later.</h2></li></ul>';
+		}
+			
+		}
 
 	function post_check(){
 	
 		if($_POST['drugs'] == 'on' && $_POST['searchTerm']){
+		// this isn't cached ?? or json ??
 				self::loadRxNorm();
 				$xml = $this->api->getDrugs($_POST['searchTerm']);
 				//unset($formatted);
@@ -187,33 +199,22 @@ class rxNormRef{
 		}
 
 		if($_POST['nui']){
-				// prolbem is that if couch is being cached it wont display it back so we need to return the appropriate object back ? but still store the new updated structure
-				// or create a new cache env. setting (5)
 					if(COUCH){
-					// how do we set output of ndfApi ?? without the method ?? force it to by modifying the source? that wont work.. will have to update the library
 						$result = self::couchCheck();
 						if($result != false) {
 							$this->cache = 4;
 							// gives us a much different object to work with ... :/
 							$result = json_decode($result,true);
-							
-							
 							self::procResult($result);
-							
-						
 							// spit it out to screen ????
-						}else{
-						 unset($this->cache);
-						// put the couch ??
 						}
 					}
 					if(!$this->cache || $_POST['s']){
-						echo "\n<b>Inside Nui - this_cache-> || _POST </b> <br/>\n";
 					// is cache stored wth??
 						self::loadNdf();
 					// we could also just decode a refined object to store in a 'better/smaller' format??
-					// run curl in background??
-						if(COUCH || RENDER_MODE == 'json') $this->ndfApi->setOutputType('json');
+					// run curl in background??	
+						if(COUCH && RENDER_MODE == 'json') $this->ndfApi->setOutputType('json');
 						// this processing is for when people want to search by name or they click a link to search the term in RxNorm (COMING SOON!!)
 						if($_POST['findConcepts'] != 'on'){
 						// change this around ?
@@ -222,8 +223,7 @@ class rxNormRef{
 							
 							
 							if(RENDER_MODE == 'json'){
-							//	$result = json_decode($result);
-								
+								$result = json_decode($result);
 								$result_count = $result->groupConcepts[0]->concept;
 								// figure out result count ...
 								}
@@ -261,10 +261,11 @@ class rxNormRef{
 							return true;
 							}
 						}
-						else{
+						elseif(!$this->cache){
 							self::loadNdf();
+							if(RENDER_MODE == 'json') $this->ndfApi->setOutputType('json');
 							$result = $this->ndfApi->getAllInfo($_POST['nui']);
-
+						//	die($result);
 							if(RENDER_MODE =='xml'){
 								
 								$result = new SimpleXMLElement($result);
@@ -272,7 +273,7 @@ class rxNormRef{
 							elseif(!is_object($result) && RENDER_MODE == 'json'){
 								// put_couch doesnt want a decoded json object just yet ...
 								//if(!COUCH)
-									$result = self::put_couch($result);
+									//$result = self::put_couch($result);
 									$result = json_decode($result,true);
 									self::procResult($result);
 								}
@@ -281,11 +282,15 @@ class rxNormRef{
 						if($result) {
 							if('RENDER_MODE' != 'json' && !COUCH)
 								$result = new SimpleXMLElement($result);
+							if(COUCH){
+								self::put_couch($result);
+							}
 								
 						}
 				}
-				
-				if($result){
+				// is this needed for ndf ? this clause should only really be called if COUCH is disabled
+				// RxNorm RECORDS processing below .... 
+				if($result && !$_POST['nui']){
 				// renders full output without making any mods .... 
 				// doesn't store to couch db for some odd reason ?
 				// will need to rewrite this
@@ -293,9 +298,7 @@ class rxNormRef{
 					foreach($result as $key=>$value){
 						if($key=='fullConcept'){
 							foreach($value as $key2=>$value2){	
-							
 								if($key2 == 'parentConcepts' && $value2[0] != ''){
-
 									echo '<li class="a_title">Parent Concepts</li>' . "\n";
 									foreach($value2 as $key3=>$value3){
 										if(is_a($value3,'stdClass'))
@@ -338,8 +341,6 @@ class rxNormRef{
 									foreach($value2 as $item)
 									{
 										// often names are identical.. do a check and combine the fields for the names and render it its own element
-										
-										
 										foreach($item as $p_name=>$p_value){
 											unset($link);
 											if($p_name == 'propertyName') $the_name = $p_value;
@@ -352,13 +353,10 @@ class rxNormRef{
 														if($names){
 															$p_value = strtolower($p_value);
 															$key_check = array_search ( $p_value , $names);
-															
 															// remove _name from  the key each element except the last one
 															if($key_check){
-																	
 																// value exists append the key check value to the key with a comma
 																	$names["$the_name,$key_check"]=$p_value;
-																
 																}
 															}else{
 															$names["$the_name"] = strtolower("$p_value");
@@ -435,11 +433,11 @@ class rxNormRef{
 				// loads post 'drug interactions' specfically from NDFrt but I think it may link itself to the rxnorm set..
 				// this stuff needs to be cached, not all terms have drug interactions so it might be good to limit this lookup to 'DRUG_KIND''s
 				if($_POST['drug_inter'] != 'on' && $result){	
+				// CACHE THIS!!
 				// weird in a loop that this wont show if render mode is json?
 				//default it to show drug interactions for now...
 					self::loadNdf();
-
-					
+					// set the kind and check if kind is of 'DRUG_KIND"
 					if(RENDER_MODE=='json')
 						$this->ndfApi->setOutputType('json');
 						
@@ -465,46 +463,33 @@ class rxNormRef{
 					
 						$drug_inter = $drug_inter->groupInteractions->interactions;
 					}
-					
-					
-					
 					if($drug_inter[0]){ 
 							$drug_inter = $drug_inter[0];
-						
-						
-					echo '
-<ul>
-<li class="a_title">Drug Interactions</li>
-<li class="d_int_comment"><ul><li>'.$drug_inter->comment."</li></ul></li>
-";					if(RENDER_MODE == 'xml'){
-					//	function build_concept($value,$c_name,$c_nui,$c_kind=NULL){
-					if($drug_inter->conceptName != '')
-						echo self::build_concept('interaction',$drug_inter->conceptName,$drug_inter->conceptNui,$drug_inter->conceptKind);
-					
-					
-						foreach($drug_inter->groupInteractingDrugs->interactingDrug as $u){
-							if($u->concept->conceptName != '' || $u->concept->conceptName)
-							echo self::build_concept('interacting_drug',$u->concept->conceptName . ' (' . $u->severity . ')',$u->concept->conceptNui,$u->concept->conceptKind);
-						}
-						
-					
-					}else{
-						// json decode moves the object around a wee bit..
-						foreach($drug_inter->groupInteractingDrugs[0]->interactingDrug as $u){
-							if($u->concept[0]->conceptName != '')
-								echo self::build_concept('interacting_drug',$u->concept[0]->conceptName . ' (' . $u->severity . ')',$u->concept[0]->conceptNui,$u->concept[0]->conceptKind);
-						}
-					
-					
+						echo '
+						<ul>
+						<li class="a_title">Drug Interactions</li>
+						<li class="d_int_comment"><ul><li>'.$drug_inter->comment."</li></ul></li>";
+						if(RENDER_MODE == 'xml'){
+						//	function build_concept($value,$c_name,$c_nui,$c_kind=NULL){
+						if($drug_inter->conceptName != '')
+							echo self::build_concept('interaction',$drug_inter->conceptName,$drug_inter->conceptNui,$drug_inter->conceptKind);
+							foreach($drug_inter->groupInteractingDrugs->interactingDrug as $u){
+								if($u->concept->conceptName != '' || $u->concept->conceptName)
+								echo self::build_concept('interacting_drug',$u->concept->conceptName . ' (' . $u->severity . ')',$u->concept->conceptNui,$u->concept->conceptKind);
+							}
+						}else{
+							// json decode moves the object around a wee bit..
+							foreach($drug_inter->groupInteractingDrugs[0]->interactingDrug as $u){
+								if($u->concept[0]->conceptName != '')
+									echo self::build_concept('interacting_drug',$u->concept[0]->conceptName . ' (' . $u->severity . ')',$u->concept[0]->conceptNui,$u->concept[0]->conceptKind);
+							}
 					}
 					
 					echo "</ul>";
 					}
 					
 					else{
-					
-						
-					
+
 				//	echo 'hi';
 						// report that NUI doesn't have any reported interactions at this time...
 							unset($drug_inter);
@@ -619,38 +604,33 @@ class rxNormRef{
 					$formatted= implode('+',$_POST[$key]);
 
 		$cached=obcer::ob_cacher();
-		
 		// chacing isn't being done properly here for the basic searches .. we dont get in a couch check anywheres...
 		if($cached == TRUE) return 0;
-		
-		
 		// if we have a search term, or someone wants to look up via rxcuid or umscui (rxNorm)
 		if(($_POST['searchTerm'] || $_POST['r'] || $_POST['u']) && !$cached) {
 			// look up inside of defined cache location
 				if($_POST['id_lookup'] || $_POST['u']  || $_POST['r']){
-					
 						// add other types to support more lookup types through get variables/post
 					if($_POST['u']){
 						$id_type = 'UMLSCUI';
 						$lookup = trim($_POST['u']);	
 					}elseif($_POST['r']){
-					
 						$id_type = 'RXCUI';
 						$lookup = $_POST['r'];
 					}
 					self::loadRxNorm();
 					
 					if(RENDER_MODE == 'xml'){
-					
 						$xml = $this->api->findRxcuiByID($id_type,$lookup);
 						$xml = (new SimpleXMLElement($xml));
 						$id = $xml->idGroup->rxnormId;
 					}else{
-						
+						// do couch processing here ...
 						$this->api->setOutputType('json');
 						$xml = $this->api->findRxcuiByID($id_type,$lookup);
 						
 						$xml = json_decode($xml);
+						
 						// may have multiples :/
 						$id = $xml->idGroup->rxnormId[0];
 						
@@ -663,47 +643,57 @@ class rxNormRef{
 					// if we have post extra than we can skip and set id properly?
 					
 					// this doesn't support json does it ??
-					
-					$xml = new SimpleXMLElement($this->api->findRxcuiByString($_POST['searchTerm']));
-					$id = $xml->idGroup->rxnormId;
+					if(RENDER_MODE == 'json') {
+						$this->api->setoutputType('json');
+						$xml = json_decode($this->api->findRxcuiByString($_POST['searchTerm']));
+						// find some way to cache this search query if (COUCH) modify searchTerm storage to add field to check ?
+						$id = $xml->idGroup->rxnormId[0];
+					}else{
+						$xml = new SimpleXMLElement($this->api->findRxcuiByString($_POST['searchTerm']));
+						$id = $xml->idGroup->rxnormId;
+					}
 				}
-				
-				
-				
 				// if term matches a search term
 				if($id != '' && !$_POST['extra'] && !$_POST['r'] && !$_POST['u']) {
-				
-				
-				
 					echo '<p class="term_result">Term "<em>'. $_POST['searchTerm'] . ($_POST['id_lookup']? " of ID type " . $_POST['id_lookup'] : NULL) . '</em>" matches RXCUI: <em>' .$id . "</em></p>\n" ;
 					self::loadRxNorm();
-					
-					
-					
-					
+
 				}
 				// suggestion loop
 				elseif(!$_POST['extra'] && !$_POST['r'] && !$_POST['u'] ){
 					//self::loadRxNorm();
+						echo '<p class="term_result"><strong>Term'. ($_POST['id_lookup']?' of ' .$_POST['id_lookup'].' ' :' '). $_POST['searchTerm'].' not found</strong></p>';
 					
-					echo '<p class="term_result"><strong>Term'. ($_POST['id_lookup']?' of ' .$_POST['id_lookup'].' ' :' '). $_POST['searchTerm'].' not found</strong></p>';
 					
-					$search = (!$_POST['id_lookup']? new SimpleXMLElement($this->api->getSpellingSuggestions($_POST['searchTerm'])) : NULL);
-					
-					if($search->suggestionGroup->suggestionList->suggestion){
+					if(RENDER_MODE == 'xml'){
+						$search = (!$_POST['id_lookup']? new SimpleXMLElement($this->api->getSpellingSuggestions($_POST['searchTerm'])) : NULL);
+						// cache_lookup('rx_search')
+					}else{
+						$this->api->setoutputType('json');
+						// cache search result too ???
+						$search = (!$_POST['id_lookup']? json_decode($this->api->getSpellingSuggestions($_POST['searchTerm'])) : NULL);
+					}
+
+				if($search->suggestionGroup->suggestionList->suggestion){
 						echo '<em>Did you mean?</em>' ;
 						foreach($search->suggestionGroup->suggestionList->suggestion as $loc=>$value)
 							echo "\n\t<strong class='suggestion'><a href='?s=$value'>$value</a></strong>\t\n";
 						// also if cache enabled check to see if the RXCUI file already exists?
 						$first = $search->suggestionGroup->suggestionList->suggestion[0] . '';
-						$xml= new SimpleXMLElement($this->api->findRxcuiByString($first));
+						$_POST['searchTerm'] =$first;
+						if(RENDER_MODE == 'xml'){
+							$xml= new SimpleXMLElement($this->api->findRxcuiByString($first));
+							$id= $xml->idGroup->rxnormId;
+							// so we don't store incorrect search values as cache!
+						}else{
+							$xml= json_decode($this->api->findRxcuiByString($first));
+							$id= $xml->idGroup->rxnormId[0];
+						}
 						unset($search);
-						$id= $xml->idGroup->rxnormId;
 						echo '<p><em>Showing first suggestion '.$first.'.</em></p>';
 						// so we don't store incorrect search values as cache!
-						$_POST['searchTerm'] =$first;
-						//unset($xml);
 					}
+
 				}elseif($_POST['r'] && !$id){
 				
 					$id= trim($_POST['r']);
@@ -727,48 +717,29 @@ class rxNormRef{
 				}
 	}
 	
-	
 	function couchCheck($json_array=false){
-	
+
 		if(COUCH && $_POST){
 		// check if it already exists first ...
-			$couch_token =$this->cache_token;
+		// always get fresh cache token ...
+			$couch_token = obcer::cache_token('db');
 			$exec_line = "curl -X GET " . COUCH_HOST . "/" . COUCH_DB . "/$couch_token";
-			
 			$tester = exec($exec_line);
-			
-			
-			if($tester =='{"error":"not_found","reason":"missing"}'){
+			if($tester =='{"error":"not_found","reason":"missing"}' || $tester == '{"error":"not_found","reason":"deleted"}'){
 				//self::loadRxNorm();
 				unset($this->cache);
 				return false;
 				}
 			else{
-				
 				$this->cache =4;
-				
-			//	$t = json_decode("$tester");
-				
 				return $tester;
 			}
 		}
-	
 	}
-
-	function put_couch($xml){
-	// couch stores a slightly more efficent model for easier lookups and does not store empty concept groups
-		// stores it flat out i dont want that ...
-			echo "\n <b> in 'put_couch' </b> </br>\b";
-		if($_POST['nui'] &&!$cache){
-		
-			$result = json_decode($xml,true);
-			$data = $result['fullConcept'];
-			$nui = $data['conceptNui'];
-			$name = $data['conceptName'];
-			$kind = $data['conceptKind'];
-			unset($data['conceptNui'],$data['conceptName'],$data['conceptKind']);
-			// group associations need work too @!! gotta write this for the non 'find concepts == on' too 
-			foreach($data as $a=>$b){
+	
+	function clean_ndf($data){
+	// creates new more efficent ndf data model
+		foreach($data as $a=>$b){
 			// removes empty concepts groupings (parentConcept,ChildConcepts, modifys array structures to reduce substructures
 				if(is_array($b) && count($b[0]) == 0)
 					unset($data[$a]);
@@ -785,7 +756,6 @@ class rxNormRef{
 							// we do a little bit of cleanup on 'roles' and combine fields
 								$data[$a] = $b[0]['role'];
 								foreach($b[0]['role'] as $r_key=>$r_value){
-								
 									if(!is_array($r_value)) $dat2[$r_value['roleName']] = $r_value['concept'];
 									else $dat2[$r_value['roleName']] = $r_value['concept'][0];
 								}
@@ -793,17 +763,14 @@ class rxNormRef{
 									unset($data[$a]);
 									$data[$a] = $dat2;
 									unset($dat2);
-									
 									}
 							}
 							elseif($b[0]['properties']) {
 								$data[$a] = $b[0]['properties'];
 							}
 							elseif($data['groupProperties'][0]) {
-								
 								$data[$a] = $data['groupProperties'][0]['property'];
 								foreach($data[$a] as $loc=>$item){
-									
 									$data[$a][$item['propertyName']] = $item['propertyValue'];
 									unset($data[$a][$loc]);
 								}
@@ -827,34 +794,47 @@ class rxNormRef{
 				}
 			}
 			
+		return $data;
+	}
+
+	function put_couch($xml,$r=NULL){
+	// couch stores a slightly more efficent model for easier lookups and does not store empty concept groups
+		// stores it flat out i dont want that ...
+		if($_POST['nui']){
+			$result = (!is_array($xml)?json_decode($xml,true):$xml);
+			$data = $result['fullConcept'];
+			$nui = $data['conceptNui'];
+			$name = $data['conceptName'];
+			$kind = $data['conceptKind'];
+			unset($data['conceptNui'],$data['conceptName'],$data['conceptKind']);
+			// group associations need work too @!! gotta write this for the non 'find concepts == on' too 
+			$data = self::clean_ndf($data);
 			// next append the couch stuff to the data .. not sure how ... could just decode them both before inserting...
 			$data = json_encode($data);
-			
-			
 			$insert = '{"_id": "'.$this->cache_token.'",
 			"nui":"'.$nui.'",
 			"name":"'.$name.'",
 			"kind":"'.$kind.'",
 			"data":'.$data.'}';
-			
-
-//			die($insert);
-			
+		}else{
+		// stores regular rxnorm record
+			// re render cache token just incase the term isn't properly rendered
+			$this->cache_token = obcer::cache_token('db');
+			$insert = '{"_id": "'.$this->cache_token.'",
+			"rxcui":"'.($r!=NULL?$r:'').'",
+			"data":'.$xml.'}';
+		
 		}
+
 		$exec_line = "curl -X PUT '" . COUCH_HOST . '/' . COUCH_DB . '/'.$this->cache_token ."' -d \ '" . $insert ."'".' -H "Content-type: application/json"' ;
-		
-	//	die($exec_line);
-		
-//		echo ($exec_line);
-		//die($exec_line);
 		exec($exec_line);
-		// refresh page instead ???
 		$xml = self::couchCheck();
 
 		return  ($xml?$xml: false);
 
 	}
 	function make_xml($id,$formatted=false){
+
 		if(COUCH && !$this->cache){
 			$xml = self::couchCheck();
 			$this->api->setOutputType('json');
@@ -878,45 +858,30 @@ class rxNormRef{
 				unset($this->cache);
 			}
 		
-	if($formatted && !$this->cache){
-			self::loadRxNorm();
+		if($formatted && !$this->cache){
+				self::loadRxNorm();
 				if(RENDER_MODE != 'xml') $this->api->setOutputType('json');
-				$xml = ($_POST['relatedBy']?$this->api->getRelatedByRelationship("$formatted","$id"):$this->api->getRelatedByType("$formatted","$id"));
-			}
+					$xml = ($_POST['relatedBy']?$this->api->getRelatedByRelationship("$formatted","$id"):$this->api->getRelatedByType("$formatted","$id"));
+				}
 		elseif(!$this->cache){
-		
-		
 			self::loadRxNorm();
-			
-			
-			
-			if(RENDER_MODE != 'xml') $this->api->setOutputType('json');
-			
+
 			$xml = $this->api->getAllRelatedInfo($id);
-			
-			
+
+			if(COUCH) self::put_couch($xml,$id);
 			
 			if(RENDER_MODE != 'xml'){
-			
 				$check = json_decode($xml);
-				
 				$check2 = $check->allRelatedGroup->conceptGroup;
-				
-				
 				foreach($check2 as $object){
 					if($count > 1)
 						$count = (count((array)$object));
-				}
-				
-				
+				}	
 			}
 			else{
 				$check = new SimpleXMLElement($xml);
-				foreach($check->allRelatedGroup->conceptGroup as $conceptGroup){
-				
+				foreach($check->allRelatedGroup->conceptGroup as $conceptGroup)
 					$count = count($conceptGroup);
-				}
-			
 			}
 
 			if($count == 1){
@@ -924,28 +889,15 @@ class rxNormRef{
 				return false;
 			}else{
 				if(COUCH && !$this->cache)$xml = self::put_couch($xml);
-
 				$return = $check;
-				
-			
 			}
-			
-			
-			
 		}
 	
-
-	
-	
-
-	if(RENDER_MODE == 'xml'){
+		if(RENDER_MODE == 'xml'){
+			if(CACHE_XML && !$this->cache && !COUCH) file_put_contents("$put_file", $return->asXML());
+			}
 		
-			
-		if(CACHE_XML && !$this->cache && !COUCH) file_put_contents("$put_file", $return->asXML());
-		
-		}
-	
-	return $return;
+		return $return;
 		 }
 
 	function sxmle_to_obj($xml){
@@ -1038,4 +990,3 @@ class rxNormRef{
 	}
 }
  new RxNormRef;
- 

@@ -32,25 +32,14 @@ define('COMPRESS_OUTPUT',false);
   
   
  // echo level rendering 
-define('RENDER_MODE','xml');
-// define('RENDER_MODE','json');
+//define('RENDER_MODE','xml');
+ define('RENDER_MODE','json');
 
-define('FILE_CACHE',false);
 
 // ideally you'll want to render as what you're file caching (if not html)
 
 // format of what gets stored to the filesystem (if render mode &file cache mode differ each must be converted)
-define('FILE_CACHE_MODE','xml');
-// replaces HIDE_FILE . doesn't rename existing files, but should/could with simple rn command
-define('FILE_CACHE_HIDE',true);
 
-
-
-define('FILE_CACHE_CASCADE',false);
-
-define('FILE_CACHE_CASCADE_DIR','cascade_cache/');
-
-define('FILE_CACHE_HIDE_DIR',true);
 // hide directories too?
 // if html mode is defined then rendermode is ignored when rendering from filesystem (die the existing html file)
 
@@ -65,41 +54,36 @@ define('FILE_CACHE_HIDE_DIR',true);
 // if couch cache true, and couch file cache supress true - empty files are stored instead of data.
 define('COUCH_FILE_CACHE_SUPRESS',true);
 
-define('COUCH_CACHE',false);
+define('COUCH_CACHE',true);
 
-
-// also store cache as xml to be processed as xml ? crazzyy .. 
-define('COUCH_CACHE_MODE','json');
-
-define('CACHE_MODE',false);
-
-define('COUCH',false);
+define('COUCH',true);
 define('COUCH_HOST','http://localhost:5984');
 define('COUCH_DB','test');
 
 
 /* Cache Settings
-	- Want to cache NOW? Change ('CACHE_XML' ,false) to ('''', true), create 
-	the cache_xml/ directory in your defined SERVER_ROOT location.
+	
+	Concentrating on making one caching method the most rhobust so other caching methods will be
+	added back as they are rewritten.
+	
+	Note - Responses from rxNorm are stored as is, along with its 'cache token' - which is generated
+	based on what the $_POST variable is (never the $_GET, although it is used in the generation of records)
+	
+	
+	For the NDT-rt , I removed a lot of nested children that were only-children, making reference easier, I also added some of the basic repsonse elements as fields.
+	
+	For these records, they will render in the new format, and if the record does not exist in the database, it will get the newly stored record in the same call.
+	Caching to the file system is not really recommended since as traffic increases, and people begin navigating every available subject (or crawlers...) you could
+	end up running out of HD space quickly.
+	
+	Couch DB's are quick and easy, and free.
+	
+	
+	*/
 
-	-With Caching enabled folders with appropriate permissions are required.
-	-Stores cache files based on POST variables. If POST variable is found, and matches existing file, 
-	script loads that file and doesn't load RxNormRef (In case of HTML caching).
-	-XML Caching stores entire datasets directly from the server; requires additional processing, but
-	file sizes are about 1/4 of cached html files.
-*/
-
-
-define('CACHE_XML',false);
-define('XML_STORE','cache_xml/');
-
-// stores HTML output - faster but larger files
-define('CACHE_QUERY',false);
-//define('CACHE_STORE','cache_query/');
 
 
 // When true will use url access instead of 'file_get_contents'. Disabled for compatability.
-define('XML_URL_ACCESS',false);
 
 // this adds a period to hide cached files in file system  highly recommended if your cache store folder is publicly visible
 define('HIDE_CACHE',true);
