@@ -2,36 +2,30 @@ RxNormRef
 =========
 **Ronaldo Barbachano**
 
-**Aug. 2011**
-
-Users may now query the NDF-Rt database (NUI lookups and semantical browsing) check out public/ndf.php .
-
-This repo was forked from RxNormRef on CFA, that I created earlier this summer. This version runs on rxnix.com.
-
-Goals
-=====
-
-Provide a fast, rhobust interface to RxNorm medical terminology database and the NDF-Rt while developing a barebones framework for API-centric web development.
+**Sep. 2011**
 
 
+This version eventually will only support json responses and caching to couch db's only. Inclusion of
+these features is incidential.
 
-Technical Features
-==================
+Whats Different
+===============
 
+**Couch Coolness**
 
-**XML/HTML File-based caching**
+Post-variable based couch document titles resulting in quick record lookups/writes without map reduce using
+curl functions executed directly from php.
 
-**Native JSON Support and Automatic caching storage /retreval via Couchdb**
+**NdfRt Response Rewrite**
 
-**Progressive loading via ob_cacher**
+This version rewrites NdfRT responses in a slightly more efficent manner (check out clean_ndf function) automatically.
 
-**Low Memory Use - Usually under a meg**
+**Drug Interactions**
 
-**Fast XML Processing with SimpleXMLElement**
+Only checked for ndf records that are drugs (speed increase)
 
-**No Database Required**
+Cached in the couch db and automatically retrieved when corresponding record is accessed.
 
-**No 3rd Party Membership or API key needed**
 
 
 Requirements
@@ -59,14 +53,3 @@ Files in public/ are to be accessed to the public (images,css,basic html).
 
 Take care if these files are moved (update the paths to the lib folder in php files). 
 
-Using the App
-=============
-
-So the ndf search does not have a spelling suggestion feature, so it makes it very difficult to 'look up' concepts.
-Because of this I have made it so records that have ingridents will be links to search the NDF database.
-
-Also once you have accesed a valid NDF record you can easily navigate to other ndf and rxnorm records via generated links.
-
-Some json structures differ slightly from the xml stucture, so bear with me while I iron out the inconsistencies (excuse the messy code)...
-
-Some records exist in the database without spaces (but slashes) this causes some issues with html layout and page flow. 
