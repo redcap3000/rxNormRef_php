@@ -108,82 +108,166 @@ class rxNormRef{
 
 
 	function procResult($result){
-	
-	if($result['fullConcept']) {
-		//$result['data'] = $result['fullConcept']; 
-		
-		$result['data'] = self::clean_ndf($result['fullConcept']);
-		unset($result['fullConcept']);
-		}
-		
-
-	// pass it an object that has the 'data' field in the root of the object
-	// this is designed for JSON and will write the xml conversion to pass into here...
-		foreach($result['data'] as $rdkey=>$rdvalue){
-			if(is_array($rdvalue)){
-				foreach($rdvalue as $inK=>$inV){
-					if(is_array($inV) && count($inV == 3) && $inV['conceptName'] != ''){
-						$theRow ["$inK"]= $this->build_concept(($rdkey == 'parentConcepts'?'pname':'cname'),($rdkey=='groupRoles'?'Group Role: ':NULL) . str_replace(array("/",','),array(' / ',', ') ,trim($inV['conceptName'])),$inV['conceptNui'],$inV['conceptKind']);
+	// this conversion is for compat. reasons with older versions of php, otherwise running json_decode($xmlstring,true) will return all assoc. arrays (this is bullshit)
+	// do per item object oriented processing
+		if($result->data){
+		//	$result['data'] = $result->data;
+		//	unset($result->data);
+		//	$result['data']['parentConcepts'] = $result['data']->parentConcepts;  
+			
+			// parent concepts
+			
+			if(is_array($result->data->parentConcepts)){
+				foreach($result->data->parentConcepts as $pc_key=>$pc_value)
+					$theRow ['parentConcepts'] []= $this->build_concept('pname', str_replace(array("/",','),array(' / ',', ') ,trim($pc_value->conceptName)),$pc_value->conceptNui,$pc_value->conceptKind);
+			}elseif(is_object($result->data->parentConcepts)){
+				$theRow ['parentConcepts'] = $this->build_concept('pname', str_replace(array("/",','),array(' / ',', ') ,trim($result->data->parentConcepts->conceptName)),$result->data->parentConcepts->conceptNui,$result->data->parentConcepts->conceptKind);
+				
+			}
+			
+			// child concepts
+			
+			
+			if(is_array($result->data->childConcepts)){
+				foreach($result->data->childConcepts as $pc_key=>$pc_value)
+					$theRow ['childConcepts'] []= $this->build_concept('cname', str_replace(array("/",','),array(' / ',', ') ,trim($pc_value->conceptName)),$pc_value->conceptNui,$pc_value->conceptKind);
+			}elseif(is_object($result->data->childConcepts)){
+				$theRow ['childConcepts'] = $this->build_concept('cname', str_replace(array("/",','),array(' / ',', ') ,trim($result->data->childConcepts->conceptName)),$result->data->childConcepts->conceptNui,$result->data->childConcepts->conceptKind);
+				
+			}
+			
+			if($result->data->groupRoles){
+				foreach($result->data->groupRoles as $gr_key=>$gr_value){
+					if($gr_key == 'has_Ingredient' || $gr_key == 'has_PE'|| $gr_key == 'has_MoA'){
+					// these need wording changes .. add other keys as encountered
+						$gr_key = 'has';
 					}
-					elseif($rdkey=='groupProperties'){
+					$theRow ['groupRoles'] []= $this->build_concept('gRole', str_replace(array("/",',','_','KIND'),array(' / ',', ',' ',' ') ,$gr_key . ' ' .$gr_value->conceptKind . ' : ' . trim($gr_value->conceptName)),$gr_value->conceptNui,$gr_value->conceptKind);
 					
-						if ($inK == 'Display_Name' || $inK == 'label'){
-							if($inK == 'label'){
-								$inV = str_replace(array('/','[',']'),array(' / ','<br/><em>','</em>'),$inV);
+				
+				}
+		
+			}
+			
+			
+			if($result->data->groupProperties){
+				foreach($result->data->groupProperties as $gp_key=>$gp_value){
+				
+					//$theRow ['groupProperties'] []= $this->build_concept('gRole', str_replace(array("/",',','_','KIND'),array(' / ',', ',' ',' ') ,$gp_key . ' ' .$gp_value->conceptKind . ' : ' . trim($gp_value->conceptName)),$gp_value->conceptNui,$gp_value->conceptKind);
+					
+					if ($gp_key == 'Display_Name' || $gp_key == 'label'){
+							if($gp_key == 'label'){
+								$gp_value = str_replace(array('/','[',']'),array(' / ','<br/><em>','</em>'),$gp_value);
 							}
-							$group_property_name = $inV;
-							
+							$group_property_name = $gp_value;
 						}
-						elseif(($inK == 'Synonym' && $inV == $group_property_name) || ($inK == 'label' && $inV == $group_property_name) || ($inK == 'MeSH_Name' && $inV == $group_property_name) || ($inK == 'RxNorm_Name' && strtoupper($inV) == $group_property_name)  || ($inK == 'NUI' || $inK == 'kind') || $inK == 'VANDF_Record'){
+						elseif(($gp_key == 'Synonym' && $gp_value == $group_property_name) || ($gp_key == 'label' && $gp_value == $group_property_name) || ($gp_key == 'MeSH_Name' && $gp_value == $group_property_name) || ($gp_key == 'RxNorm_Name' && strtoupper($gp_value) == $group_property_name)  || ($gp_key == 'NUI' || $gp_key == 'kind') || $gp_key == 'VANDF_Record'){
 						// if they synonym is equal to the property name don't show it...
 							;
 						}
-						
-						elseif($inK == 'Level'){
-							$group_level = $inV;
-						}elseif($inK == 'Status'){
-							$group_status = $inV;
+						elseif($gp_key== 'Level'){
+							$group_level = $gp_value;
+						}elseif($gp_key== 'Status'){
+							$group_status = $gp_value;
 						}
-						elseif($inK == 'MeSH_Definition'){
-							$mesh_def = $inV;
-						}elseif($inK == 'Synonym'){
+						elseif($gp_key == 'MeSH_Definition'){
+							$gp_key = $gp_value;
+						}elseif($gp_key== 'Synonym'){
 							if(!$sym)
-								$sym = $inV;
+								$sym = $gp_value;
 							else{
-								$sym .= ", $inV";
+								$sym .= ", $gp_value";
 								}
 						}
 						else{
-					
 					//	$inV = ucwords(str_replace(array("/",','),array(' / ',', '),strtolower(trim($inV))));
 					//	$theRow ['groupProperties'][]= "\t\t<li class='gProperty'><strong>" . str_replace('_',' ',$inK) . '</strong> ' . (!in_array($inK,array('RxNorm_CUI','NUI','UMLS_CUI','code','MeSH_CUI','MeSH_DUI','FDA_UNII'))?strtolower($inV):$inV) . '</li>';
 						}
-					}elseif($rdkey=='parentConcepts' && count($rdvalue)==3){
-					// also remove slashes and replace with a space, or slashes with a space (since a lot of slashes do not have spaces and mess up css layout)
-						$theRow ['parentConcepts'][]= $this->build_concept('pConcept',$rdvalue['conceptName'],$rdvalue['conceptNui'],$rdvalue['conceptKind']);
-					}	
+				
+				}
+				
+		
+				
+			
+			
+			
+		
+			
+		
+		}else{
+			//	die(print_r($result));
+			// intercept a record to reform...
+			if($result['fullConcept']) {
+				//$result['data'] = $result['fullConcept']; 
+			
+				$result['data'] = self::clean_ndf($result['fullConcept']);
+				unset($result['fullConcept']);
+			}
+			// pass it an object that has the 'data' field in the root of the object
+			// this is designed for JSON and will write the xml conversion to pass into here...
+			// may not be able to use object value in this foreach loop in earlier versions of php
+			foreach($result['data'] as $rdkey=>$rdvalue){
+				if(is_array($rdvalue)){
+					foreach($rdvalue as $inK=>$inV){
+						if(is_array($inV) && count($inV == 3) && $inV['conceptName'] != ''){
+							$theRow ["$inK"]= $this->build_concept(($rdkey == 'parentConcepts'?'pname':'cname'),($rdkey=='groupRoles'?'Group Role: ':NULL) . str_replace(array("/",','),array(' / ',', ') ,trim($inV['conceptName'])),$inV['conceptNui'],$inV['conceptKind']);
+						}
+						elseif($rdkey=='groupProperties'){
+							if ($inK == 'Display_Name' || $inK == 'label'){
+								if($inK == 'label'){
+									$inV = str_replace(array('/','[',']'),array(' / ','<br/><em>','</em>'),$inV);
+								}
+								$group_property_name = $inV;
+							}
+							elseif(($inK == 'Synonym' && $inV == $group_property_name) || ($inK == 'label' && $inV == $group_property_name) || ($inK == 'MeSH_Name' && $inV == $group_property_name) || ($inK == 'RxNorm_Name' && strtoupper($inV) == $group_property_name)  || ($inK == 'NUI' || $inK == 'kind') || $inK == 'VANDF_Record'){
+							// if they synonym is equal to the property name don't show it...
+								;
+							}
+							elseif($inK == 'Level'){
+								$group_level = $inV;
+							}elseif($inK == 'Status'){
+								$group_status = $inV;
+							}
+							elseif($inK == 'MeSH_Definition'){
+								$mesh_def = $inV;
+							}elseif($inK == 'Synonym'){
+								if(!$sym)
+									$sym = $inV;
+								else{
+									$sym .= ", $inV";
+									}
+							}
+							else{
+						//	$inV = ucwords(str_replace(array("/",','),array(' / ',', '),strtolower(trim($inV))));
+						//	$theRow ['groupProperties'][]= "\t\t<li class='gProperty'><strong>" . str_replace('_',' ',$inK) . '</strong> ' . (!in_array($inK,array('RxNorm_CUI','NUI','UMLS_CUI','code','MeSH_CUI','MeSH_DUI','FDA_UNII'))?strtolower($inV):$inV) . '</li>';
+							}
+						}elseif($rdkey=='parentConcepts' && count($rdvalue)==3){
+						// also remove slashes and replace with a space, or slashes with a space (since a lot of slashes do not have spaces and mess up css layout)
+							$theRow ['parentConcepts'][]= $this->build_concept('pConcept',$rdvalue['conceptName'],$rdvalue['conceptNui'],$rdvalue['conceptKind']);
+						}	
+					}
 				}
 			}
-	}
-	
+		}
 			// wanted to show group properties first ...
 			
-		if($group_property_name){
-			echo "<ul><li class='groupPropName'><h2>".ucwords(strtolower($group_property_name)).  ($group_level?" : $group_level</h2>" : '</h2>') .'</li>'. ($group_status?"<h3>$group_status</h3>":NULL). ($mesh_def?"<p>$mesh_def</p>":NULL)  . ($sym?"<br/><strong>Synonyms: </strong>$sym":NULL) . '</li></ul>'  ;
-	
-	//	if($theRow['groupProperties']){
-		
-	//		echo self::echoProp($theRow['groupProperties']);
-	//		unset($theRow['groupProperties']);
-	//	}
-			
+			if($group_property_name){
+				echo "<ul><li class='groupPropName'><h2>".ucwords(strtolower($group_property_name)).  ($group_level?" : $group_level</h2>" : '</h2>') .'</li>'. ($group_status?"<h3>$group_status</h3>":NULL). ($mesh_def?"<p>$mesh_def</p>":NULL)  . ($sym?"<br/><strong>Synonyms: </strong>$sym":NULL) . '</li></ul>'  ;
+			//	if($theRow['groupProperties']){
+				
+			//		echo self::echoProp($theRow['groupProperties']);
+			//		unset($theRow['groupProperties']);
+			//	}
 				echo '<ul><li class="groupPropName"><h3>Related Concepts</h3></li></ul>';
 				echo self::echoProp($theRow);
-		}else{
-			echo '<ul><li class="groupPropName"><h2>No Record</h2><p>A record could not be found for the corresponding NUI, please check back later.</h2></li></ul>';
-		}
+			}else{
+				echo '<ul><li class="groupPropName"><h2>No Record</h2><p>A record could not be found for the corresponding NUI, please check back later.</h2></li></ul>';
+			}
 			
 		}
+		
+			
+	}
 
 	function post_check(){
 		if($_POST['drugs'] == 'on' && $_POST['searchTerm']){
@@ -204,16 +288,11 @@ class rxNormRef{
 						if($result != false) {
 							$this->cache = 4;
 							// gives us a much different object to work with ... :/
-							$result = json_decode($result,true);
-							
-							$this->nui = $result['nui'];
-							$this->kind = $result['kind'];
-							print_r($this);
+							$result = json_decode($result);
+							$this->nui = $result->nui;
+							$this->kind = $result->kind;
 							
 							self::procResult($result);
-							
-							
-							
 							// spit it out to screen ????
 						}
 					}
@@ -443,11 +522,11 @@ class rxNormRef{
 				// loads post 'drug interactions' specfically from NDFrt but I think it may link itself to the rxnorm set..
 				// this stuff needs to be cached, not all terms have drug interactions so it might be good to limit this lookup to 'DRUG_KIND''s
 				if($_POST['drug_inter'] != 'on' && $result && $this->kind == 'DRUG_KIND'){	
-				
 					// check for drug interactions, store in database as another record append di to the cache token
 					
 					
 					$drug_inter = self::couchCheck('di');
+					
 					// obviously if couch is disabled this below will run (not supported for xml/json file caching just yet)
 					if($drug_inter == false){
 
@@ -460,8 +539,6 @@ class rxNormRef{
 						$drug_inter = $this->ndfApi->findDrugInteractions($this->nui,3);
 						if(COUCH){
 						// uh oh how to retreve record if it exists ??
-						//	print_r($drug_inter);
-						//	$drug_inter = json_decode($drug_inter);
 							self::put_couch($drug_inter);
 						}
 						
@@ -483,6 +560,13 @@ class rxNormRef{
 						
 							$drug_inter = $drug_inter->groupInteractions->interactions;
 						}
+					}else{
+					// if we want to do file caching need to change couchCheck to
+					// drug interaction response could use rewriting groupInteractingDrugs->interactingDrug->(interactiongDrug[0]->concept
+						$drug_inter = json_decode($drug_inter);
+						$drug_inter = $drug_inter->data->groupInteractions->interactions;
+					
+					
 					}
 					
 					
@@ -823,7 +907,9 @@ class rxNormRef{
 	// couch stores a slightly more efficent model for easier lookups and does not store empty concept groups
 		// stores it flat out i dont want that ...
 		if($_POST['nui'] && $this->kind != 'DRUG_KIND'){
-			$result = (!is_array($xml)?json_decode($xml,true):$xml);
+			$result = (!is_array($xml)?json_decode($xml):$xml);
+			
+	
 			$data = $result['fullConcept'];
 			$nui = $data['conceptNui'];
 			$name = $data['conceptName'];
@@ -839,7 +925,7 @@ class rxNormRef{
 			"kind":"'.$kind.'",
 			"data":'.$data.'}';
 		}elseif($r!=NULL){
-		// stores regular rxnorm record
+		// stores regular rxnorm record 
 			// re render cache token just incase the term isn't properly rendered
 			$this->cache_token = obcer::cache_token('db');
 			$insert = '{"_id": "'.$this->cache_token.'",
@@ -854,7 +940,6 @@ class rxNormRef{
 			
 		//	print_r(json_decode($xml));
 			
-			
 			$insert = '{"_id": "'.obcer::cache_token('db') . '_di'.'",
 			"nui":"'.$this->nui.'",
 			"kind":"DRUG_INTERACTION",
@@ -867,7 +952,7 @@ class rxNormRef{
 		
 	//	if($this->nui) die($exec_line);
 		exec($exec_line);
-		$xml = self::couchCheck();
+		$xml = self::couchCheck(  ($this->kind == 'DRUG_KIND'?'di':NULL));
 
 		return  ($xml?$xml: false);
 
