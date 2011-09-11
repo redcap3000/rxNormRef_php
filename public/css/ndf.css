@@ -1,25 +1,9 @@
-/* @override http://www.myparse.net/sb5/public/css/ndf.css */
-
-/* @override http://www.myparse.net/sb5/public/css/ndf.css */
-
-/* @override http://rxnix.com/rxNormRef_php/public/css/ndf.css */
-
-/* @override http://myparse.net/sb5/public/css/ndf.css */
-
-/* @override 
-	http://myparse.net/sb5/public/css/ndf.css
-	http://myparse.net/sb4/rxNormRef_php/public/css/ndf.css
-
-*/
-
 #ndf_content ul li.d_int_comment ul {
 width: 50em;clear: both;
 padding: 1em;
 margin: 1em 0;
 
 }
-
-
 
 #ndf_content ul li.interacting_drug ul {
 border: none;}
@@ -53,12 +37,11 @@ float: left;
 	color: maroon;
 	font-weight: bold;
 	font-style: italic;
-	font-size: 2.5em;
+	font-size: 2.5em;float: right;
 }
 
 #header a{
-	font-size: .75em;float: right;
-	margin-right: 9.5em;
+float: right;clear:both;
 }
 
 #header form.main_form fieldset ul {
@@ -211,7 +194,6 @@ float: left;
 #ndf_content ul li.groupPropName{
 	width: 55.75em;
 	clear:both;
-	margin-left: 1em;
 	color: maroon;
 	style:bold;
 	line-height: 2em;
@@ -416,6 +398,25 @@ width: auto;
 
 #led ul {
 	border: none;width: 6em;
+}
+
+.ndf_menu a:hover{
+	color: black;
+}
+
+#ndf_content ul.ndf_menu {border-top: solid maroon .2em; border-bottom: solid maroon .2em;padding-top: .45em;
+	float: left;margin-top: -.9em;
+}
+
+
+.ndf_menu li{
+	float: left;width: 14em;height: 2.5em;text-align:center;
+	font-weight: bold;
+	letter-spacing: .1em;
+}
+
+.ndf_menu a{
+	margin: 0;
 }
 
 
