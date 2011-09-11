@@ -105,9 +105,6 @@ class rxNormRef{
 					$theRow ['childConcepts'] []= $this->build_concept('cname', str_replace(array("/",','),array(' / ',', ') ,trim($pc_value->conceptName)),$pc_value->conceptNui,$pc_value->conceptKind);
 			elseif(is_object($result->data->childConcepts))
 				$theRow ['childConcepts'] = $this->build_concept('cname', str_replace(array("/",','),array(' / ',', ') ,trim($result->data->childConcepts->conceptName)),$result->data->childConcepts->conceptNui,$result->data->childConcepts->conceptKind);
-				
-			
-			
 			if($result->data->groupRoles){
 				foreach($result->data->groupRoles as $gr_key=>$gr_value){
 					if($gr_key == 'has_Ingredient' || $gr_key == 'has_PE'|| $gr_key == 'has_MoA'){
@@ -119,6 +116,7 @@ class rxNormRef{
 		
 			}
 			if($result->data->groupProperties){
+				
 				foreach($result->data->groupProperties as $gp_key=>$gp_value){
 					if ($gp_key == 'Display_Name' || $gp_key == 'label'){
 							if($gp_key == 'label'){
@@ -136,7 +134,7 @@ class rxNormRef{
 							$group_status = $gp_value;
 						}
 						elseif($gp_key == 'MeSH_Definition'){
-							$gp_key = $gp_value;
+							$mesh_def = $gp_value;
 						}elseif($gp_key== 'Synonym'){
 							if(!$sym)
 								$sym = $gp_value;
@@ -692,7 +690,7 @@ class rxNormRef{
 				return false;
 				}
 			else{
-					
+				//print_r(json_decode($tester));	
 				if($type !='di'){
 			
 					$this->cache =4;
