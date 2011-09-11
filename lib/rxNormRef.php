@@ -1,4 +1,7 @@
 <?php
+
+		
+
 class rxNormRef{
 	static	$normalElements = Array(
 			'TTY'=>'Term Type','IN'=>'Ingredients','PIN'=>'Precise Ingredient',
@@ -30,6 +33,7 @@ class rxNormRef{
 				
 			}
 	}
+	
 	
 	function __construct(){
 		$this->cache_token = obcer::cache_token((COUCH?'db':NULL));
@@ -118,11 +122,16 @@ class rxNormRef{
 			if($result->data->groupProperties){
 				
 				foreach($result->data->groupProperties as $gp_key=>$gp_value){
-					if ($gp_key == 'Display_Name' || $gp_key == 'label'){
+					if ($gp_key == 'Display_Name' || $gp_key == 'label' || $gp_key == 'kind'){
 							if($gp_key == 'label'){
-								$gp_value = str_replace(array('/','[',']'),array(' / ','<br/><em>','</em>'),$gp_value);
+							
+								// could do this better maybe with multiple string functions..
+								$gp_value = explode('[',str_replace('/',' / ',$gp_value));
+								
+								$group_property_name = $gp_value[0];
+							}elseif($gp_key == 'kind' && $group_property_name){
+								$group_property_name .= '<br/> ( ' . str_replace(array('_','KIND'),array(' ',''),$gp_value) . ' )';
 							}
-							$group_property_name = $gp_value;
 						}
 						elseif(($gp_key == 'Synonym' && $gp_value == $group_property_name) || ($gp_key == 'label' && $gp_value == $group_property_name) || ($gp_key == 'MeSH_Name' && $gp_value == $group_property_name) || ($gp_key == 'RxNorm_Name' && strtoupper($gp_value) == $group_property_name)  || ($gp_key == 'NUI' || $gp_key == 'kind') || $gp_key == 'VANDF_Record'){
 						// if they synonym is equal to the property name don't show it...
@@ -132,6 +141,8 @@ class rxNormRef{
 							$group_level = $gp_value;
 						}elseif($gp_key== 'Status'){
 							$group_status = $gp_value;
+						}elseif($gp_key == 'kind'){
+							$kind = $gp_value;
 						}
 						elseif($gp_key == 'MeSH_Definition'){
 							$mesh_def = $gp_value;
@@ -150,6 +161,7 @@ class rxNormRef{
 				}
 
 		}else{
+		// when is this clause used ???
 			// intercept a record to reform...
 			if($result['fullConcept']) {
 				$result['data'] = self::clean_ndf($result['fullConcept']);
@@ -161,15 +173,23 @@ class rxNormRef{
 			foreach($result['data'] as $rdkey=>$rdvalue){
 				if(is_array($rdvalue)){
 					foreach($rdvalue as $inK=>$inV){
+				
 						if(is_array($inV) && count($inV == 3) && $inV['conceptName'] != ''){
 							$theRow ["$inK"]= $this->build_concept(($rdkey == 'parentConcepts'?'pname':'cname'),($rdkey=='groupRoles'?'Group Role: ':NULL) . str_replace(array("/",','),array(' / ',', ') ,trim($inV['conceptName'])),$inV['conceptNui'],$inV['conceptKind']);
 						}
 						elseif($rdkey=='groupProperties'){
-							if ($inK == 'Display_Name' || $inK == 'label'){
+							
+							
+							if ($inK == 'Display_Name' || $inK == 'label' || $inK == 'kind'){
 								if($inK == 'label'){
 									$inV = str_replace(array('/','[',']'),array(' / ','<br/><em>','</em>'),$inV);
+									// so we get stuck with a value we dont really need.... could just split on '[' and delete the rest and attempt to retreve the 'kind'
 								}
-								$group_property_name = $inV;
+								if(!$group_property_name){
+									$group_property_name = $inV;
+								}elseif($inK=='kind'){
+									$group_property_name .= $inV;
+								}
 							}
 							elseif(($inK == 'Synonym' && $inV == $group_property_name) || ($inK == 'label' && $inV == $group_property_name) || ($inK == 'MeSH_Name' && $inV == $group_property_name) || ($inK == 'RxNorm_Name' && strtoupper($inV) == $group_property_name)  || ($inK == 'NUI' || $inK == 'kind') || $inK == 'VANDF_Record'){
 							// if they synonym is equal to the property name don't show it...
