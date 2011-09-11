@@ -105,19 +105,25 @@ class rxNormRef{
 					$theRow ['childConcepts'] []= $this->build_concept('cname', str_replace(array("/",','),array(' / ',', ') ,trim($pc_value->conceptName)),$pc_value->conceptNui,$pc_value->conceptKind);
 			elseif(is_object($result->data->childConcepts))
 				$theRow ['childConcepts'] = $this->build_concept('cname', str_replace(array("/",','),array(' / ',', ') ,trim($result->data->childConcepts->conceptName)),$result->data->childConcepts->conceptNui,$result->data->childConcepts->conceptKind);
-
-			if($result->data->groupRoles)
+				
+			
+			
+			if($result->data->groupRoles){
 				foreach($result->data->groupRoles as $gr_key=>$gr_value){
-					if($gr_key == 'has_Ingredient' || $gr_key == 'has_PE'|| $gr_key == 'has_MoA')
+					if($gr_key == 'has_Ingredient' || $gr_key == 'has_PE'|| $gr_key == 'has_MoA'){
 					// these need wording changes .. add other keys as encountered
 						$gr_key = 'has';
+					}
 					$theRow ['groupRoles'] []= $this->build_concept('gRole', str_replace(array("/",',','_','KIND'),array(' / ',', ',' ',' ') ,$gr_key . ' ' .$gr_value->conceptKind . ' : ' . trim($gr_value->conceptName)),$gr_value->conceptNui,$gr_value->conceptKind);
 				}
+		
+			}
 			if($result->data->groupProperties){
 				foreach($result->data->groupProperties as $gp_key=>$gp_value){
 					if ($gp_key == 'Display_Name' || $gp_key == 'label'){
-							if($gp_key == 'label')
+							if($gp_key == 'label'){
 								$gp_value = str_replace(array('/','[',']'),array(' / ','<br/><em>','</em>'),$gp_value);
+							}
 							$group_property_name = $gp_value;
 						}
 						elseif(($gp_key == 'Synonym' && $gp_value == $group_property_name) || ($gp_key == 'label' && $gp_value == $group_property_name) || ($gp_key == 'MeSH_Name' && $gp_value == $group_property_name) || ($gp_key == 'RxNorm_Name' && strtoupper($gp_value) == $group_property_name)  || ($gp_key == 'NUI' || $gp_key == 'kind') || $gp_key == 'VANDF_Record'){
@@ -134,9 +140,9 @@ class rxNormRef{
 						}elseif($gp_key== 'Synonym'){
 							if(!$sym)
 								$sym = $gp_value;
-							else
+							else{
 								$sym .= ", $gp_value";
-								
+								}
 						}
 						else{
 					//	$inV = ucwords(str_replace(array("/",','),array(' / ',', '),strtolower(trim($inV))));
@@ -171,20 +177,20 @@ class rxNormRef{
 							// if they synonym is equal to the property name don't show it...
 								;
 							}
-							elseif($inK == 'Level')
+							elseif($inK == 'Level'){
 								$group_level = $inV;
-							elseif($inK == 'Status')
+							}elseif($inK == 'Status'){
 								$group_status = $inV;
-							
-							elseif($inK == 'MeSH_Definition')
+							}
+							elseif($inK == 'MeSH_Definition'){
 								$mesh_def = $inV;
-							elseif($inK == 'Synonym')
+							}elseif($inK == 'Synonym'){
 								if(!$sym)
 									$sym = $inV;
-								else
+								else{
 									$sym .= ", $inV";
-									
-							
+									}
+							}
 							else{
 						//	$inV = ucwords(str_replace(array("/",','),array(' / ',', '),strtolower(trim($inV))));
 						//	$theRow ['groupProperties'][]= "\t\t<li class='gProperty'><strong>" . str_replace('_',' ',$inK) . '</strong> ' . (!in_array($inK,array('RxNorm_CUI','NUI','UMLS_CUI','code','MeSH_CUI','MeSH_DUI','FDA_UNII'))?strtolower($inV):$inV) . '</li>';
@@ -421,12 +427,22 @@ class rxNormRef{
 						self::loadNdf();
 						// set the kind and check if kind is of 'DRUG_KIND"
 						$drug_inter = $this->ndfApi->findDrugInteractions($this->nui,3);
-						if(COUCH)
+						if(COUCH){
+						// uh oh how to retreve record if it exists ??
 							self::put_couch($drug_inter);
-						$drug_inter = json_decode($drug_inter);
-						// should return encode json object etc...
-						$drug_inter = $drug_inter->groupInteractions->interactions;
+						}
 						
+						$drug_inter = json_decode($drug_inter);
+						
+						// should return encode json object etc...
+	
+						if(is_a($drug_inter,'SimpleXMLElement')){
+						
+							$drug_inter = $drug_inter->xpath('groupInteractions/interactions');
+						}else{
+						
+							$drug_inter = $drug_inter->groupInteractions->interactions;
+						}
 					}else{
 					// if we want to do file caching need to change couchCheck to
 					// drug interaction response could use rewriting groupInteractingDrugs->interactingDrug->(interactiongDrug[0]->concept
@@ -452,6 +468,7 @@ class rxNormRef{
 					}
 					
 					else{
+				//	echo 'hi';
 						// report that NUI doesn't have any reported interactions at this time...
 							unset($drug_inter);
 							
@@ -748,10 +765,13 @@ class rxNormRef{
 	}
 
 	function put_couch($xml,$r=NULL,$n=NULL){
+
+	//die('put_couch' . print_r($this));
 	// couch stores a slightly more efficent model for easier lookups and does not store empty concept groups
 		// stores it flat out i dont want that ...
 		if($_POST['nui'] && $this->kind != 'DRUG_KIND'){
 			$result = (!is_array($xml)?json_decode($xml):$xml);
+
 			$data = $result['fullConcept'];
 			$nui = $data['conceptNui'];
 			$name = $data['conceptName'];
@@ -761,21 +781,45 @@ class rxNormRef{
 			$data = self::clean_ndf($data);
 			// next append the couch stuff to the data .. not sure how ... could just decode them both before inserting...
 			$data = json_encode($data);
-			$insert = '{"_id": "'.$this->cache_token.'","nui":"'.$nui.'","name":"'.$name.'","kind":"'.$kind.'","data":'.$data.'}';
-		}elseif($r!=NULL)
+			$insert = '{"_id": "'.$this->cache_token.'",
+			"nui":"'.$nui.'",
+			"name":"'.$name.'",
+			"kind":"'.$kind.'",
+			"data":'.$data.'}';
+		}elseif($r!=NULL){
 		// stores regular rxnorm record 
 			// re render cache token just incase the term isn't properly rendered
 			$this->cache_token = obcer::cache_token('db');
-			$insert = '{"_id": "'.$this->cache_token.'","rxcui":"'.($r!=NULL?$r:'').'","data":'.$xml.'}';
-		elseif($this->nui && $this->kind == 'DRUG_KIND')
+			$insert = '{"_id": "'.$this->cache_token.'",
+			"rxcui":"'.($r!=NULL?$r:'').'",
+			"data":'.$xml.'}';
+		
+		}elseif($this->nui && $this->kind == 'DRUG_KIND'){
 		// since nui drugkind is set after the cache is returned this should be ok 
 		// this is for drug interactions with NUI's ... this is slightly confusing
 		// add drug interaction to cache token so we can retreve it based on the post var ..
-			$insert = '{"_id": "'.obcer::cache_token('db') . '_di'.'","nui":"'.$this->nui.'","kind":"DRUG_INTERACTION","data":'.$xml.'}';
-		
+			
+			$insert = '{"_id": "'.obcer::cache_token('db') . '_di'.'",
+			"nui":"'.$this->nui.'",
+			"kind":"DRUG_INTERACTION",
+			"data":'.$xml.'}';
 
+		}
+	// hijack base class??
+	// having probs sending the curl so use exec for now .. :/
+	/*
+		if($this->couch){
+			$couch_exec =  '/'.$this->cache_token .($this->kind=='DRUG_KIND'?'_di':NULL) ."' -d \ '" . $insert ."'";
+			die($this->couch->_request($couch_exec,'PUT',false,array('Content-type: application/json')));
+			
+		}
+	*/
 		$exec_line = "curl -X PUT '" . COUCH_HOST . '/' . COUCH_DB . '/'.$this->cache_token .($this->kind=='DRUG_KIND'?'_di':NULL) ."' -d \ '" . $insert ."'".' -H "Content-type: application/json"' ;
+		
+		
+	//	if($this->nui) die($exec_line);
 		exec($exec_line);
+		
 		$xml = self::couchCheck(  ($this->kind == 'DRUG_KIND'?'di':NULL));
 		if($xml)
 		// show the newly created record in its intended format
@@ -810,7 +854,9 @@ class rxNormRef{
 				echo  ('Record did not return any matching RxNorm records');
 				return false;
 			}else{
-				if(COUCH && !$this->cache)$xml = self::put_couch($xml);
+				if(COUCH && !$this->cache){$xml = self::put_couch($xml);
+					//die($xml);
+				}
 				$return = $xml;
 			}
 		}
