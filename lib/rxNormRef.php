@@ -99,7 +99,7 @@ class rxNormRef{
 				foreach($result->data->parentConcepts as $pc_key=>$pc_value)
 					$theRow ['parentConcepts'] []= $this->build_concept('pname',str_replace(array("/",','),array(' / ',', ') ,trim($pc_value->conceptName)),$pc_value->conceptNui,$pc_value->conceptKind);
 			}elseif(is_object($result->data->parentConcepts)){
-				$theRow ['parentConcepts'] = $this->build_concept('pname', 'Parent Concept '.str_replace(array("/",','),array(' / ',', ') ,trim($result->data->parentConcepts->conceptName)),$result->data->parentConcepts->conceptNui,$result->data->parentConcepts->conceptKind);
+				$theRow ['parentConcepts'] = $this->build_concept('pname', str_replace(array("/",','),array(' / ',', ') ,trim($result->data->parentConcepts->conceptName)),$result->data->parentConcepts->conceptNui,$result->data->parentConcepts->conceptKind);
 			}
 			// child concepts
 			if(is_array($result->data->childConcepts))
@@ -161,7 +161,7 @@ class rxNormRef{
 		}
 			// wanted to show group properties first ...
 			if($group_property_name){
-				echo "<ul><li class='groupPropName'><h2>".ucwords(strtolower($group_property_name)).  ($group_level?" : $group_level</h2>" : '</h2>') .'</li>'. ($group_status?"<h3>$group_status</h3>":NULL). ($mesh_def?"<p>$mesh_def</p>":NULL)  . ($sym?"<br/><strong>Synonyms: </strong>$sym":NULL) . '</li></ul>'  ;
+				echo "<ul><li class='groupPropName'><h2>".ucwords(strtolower($group_property_name)).  ($group_level?" : $group_level</h2>" : '</h2>') .'</li>'. ($group_status?"<h3>$group_status</h3>":NULL). ($mesh_def?"<p>$mesh_def</p>":NULL)  . ($sym?"<br/><strong>Synonyms : <em>$sym</em>  </strong>":NULL) . '</li></ul>'  ;
 			//	if($theRow['groupProperties']){
 				
 			//		echo self::echoProp($theRow['groupProperties']);
