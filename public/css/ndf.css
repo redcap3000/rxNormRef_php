@@ -1,9 +1,27 @@
+/* @override http://myparse.net/sb6/public/css/ndf.css */
+
+/* @override http://www.myparse.net/sb5/public/css/ndf.css */
+
+/* @override http://www.myparse.net/sb5/public/css/ndf.css */
+
+/* @override http://rxnix.com/rxNormRef_php/public/css/ndf.css */
+
+/* @override http://myparse.net/sb5/public/css/ndf.css */
+
+/* @override 
+	http://myparse.net/sb5/public/css/ndf.css
+	http://myparse.net/sb4/rxNormRef_php/public/css/ndf.css
+
+*/
+
 #ndf_content ul li.d_int_comment ul {
 width: 50em;clear: both;
 padding: 1em;
 margin: 1em 0;
 
 }
+
+
 
 #ndf_content ul li.interacting_drug ul {
 border: none;}
@@ -42,6 +60,20 @@ float: left;
 
 #header a{
 float: right;clear:both;
+}
+
+#ndf_content ul li.pname {
+width: 45em;font-size: 1.3em;
+}
+
+li.gRole{
+width: 45em;
+text-align: center;
+}
+
+#ndf_content ul li.cname {
+width: 12em;margin-left: 2em;
+
 }
 
 #header form.main_form fieldset ul {
@@ -166,7 +198,7 @@ img.bg_black{
 
 
 #ndf_content ul li ul {
-	border-left: solid maroon 2em;
+
 	float: left; margin: .25em;padding-left: .25em;
 
 }
@@ -187,17 +219,21 @@ float: left;
 }
 
 #ndf_content ul p {
-	width: 54em;
-	margin-left: 3em;
+margin: 1.1em;
 }
 
 #ndf_content ul li.groupPropName{
-	width: 55.75em;
+	width: 42.75em;
 	clear:both;
+	margin-top: 1em;
 	color: maroon;
 	style:bold;
-	line-height: 2em;
-	letter-spacing:.15em;
+	font-size: 1.4em;
+	letter-spacing:.1em;
+}
+
+.groupPropName h2 {
+	margin-top: 0em;	
 }
 
 #ndf_content ul ul ul ul ul li.DRUG_KIND {
@@ -294,10 +330,9 @@ margin: .15em .35em;
 }
 
 #ndf_content ul li.conceptName {
-	width: 14.9em;
+	
 	margin: 0 .55em;
 	font-weight: bold;
-	min-height: 2.5em;
 }
 
 
