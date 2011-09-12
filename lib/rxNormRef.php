@@ -23,6 +23,17 @@ class rxNormRef{
 				$this->ndfApi->setOutputType('json');
 			}
 	}
+	
+	function loadRxTerms(){
+		if(!class_exists('APIBaseClass')) require 'APIBaseClass.php';
+			if(!class_exists('rxTermsApi')){
+				require 'rxTermsApi.php';
+				$this->rxTermsApi = new rxTermsApi(null,'json');
+				$this->rxTermsVersion = $this->rxTermsApi->getRxTermsVersion();
+				
+			}
+	
+	}
 	function __construct(){
 		$this->cache_token = obcer::cache_token((COUCH?'db':NULL));
 		$this->start_time = (float) array_sum(explode(' ',microtime()));
@@ -158,7 +169,7 @@ class rxNormRef{
 			//	}
 			//	echo '<ul><li class="groupPropName"><h3>Related Concepts</h3></li></ul>';
 				echo self::echoProp($theRow);
-			}else{
+			}elseif(!$scd){
 				echo '<ul><li class="groupPropName"><h2>No Record</h2><p>A record could not be found for the corresponding NUI, please check back later.</h2></li></ul>';
 			}	
 		}	
@@ -447,9 +458,63 @@ class rxNormRef{
 				}
 				// Now we get the actual syntax to return the real xml object
 				if($id){
-				
+					unset($scd);
 				// make xml is the only way we can cache something? wtf
 					$xml = self::make_xml($id,$formatted);
+					// check couch for rxTerms...
+						self::loadRxTerms();
+						$rxTerms = $this->rxTermsApi->getAllRxTermInfo($id);
+						
+						if($rxTerms == '{"rxtermsProperties":null}' || $rxTerms == '' || $rxTerms == false){
+							;
+						}else{
+							$scd=true;
+							$rxTerms = json_decode($rxTerms);
+						
+							echo '<ul><li><h2>RxTerms Properties</h2></li>';
+							foreach($rxTerms->rxtermsProperties as $name=>$value){
+								if(trim($value) != '')
+									{
+										switch ($name) {
+											case 'brandName':
+												echo"<li class='$name'><h2>$value</h2></li>";
+												break;
+											case 'displayName':
+												echo"<li class='$name'><h3>$value</h3></li>";
+												break;
+											case 'synonym':
+											
+												echo"<li class='$name'><h4>Synonym: $value</h4></li>";
+												 break;
+											case 'fullName':
+												$fullName = $value;
+												; break;
+											case 'fullGenericName':
+												if($value != $fullGenericName){
+												echo "<li class='$name'><em>$value</em></li>";
+												}
+												
+												; break;	
+											case 'strength':
+												; break;	
+											case 'rxtermsDoseForm':
+												; break;
+											case 'route':
+												echo "<li><strong>$value</strong></li>";
+												 break;
+											case 'rxnormDoseForm':
+												; break	;
+											case 'genericRxcui':
+												; break	;	
+											
+										}
+									}
+
+
+							}
+							echo '</ul>';
+							// show and cache the term? put couch ??
+						}
 						
 						}
 						
