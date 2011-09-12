@@ -99,9 +99,9 @@ class rxNormRef{
 			// parent concepts
 			if(is_array($result->data->parentConcepts)){
 				foreach($result->data->parentConcepts as $pc_key=>$pc_value)
-					$theRow ['parentConcepts'] []= $this->build_concept('pname', str_replace(array("/",','),array(' / ',', ') ,trim($pc_value->conceptName)),$pc_value->conceptNui,$pc_value->conceptKind);
+					$theRow ['parentConcepts'] []= $this->build_concept('pname', 'Parent Name:'.str_replace(array("/",','),array(' / ',', ') ,trim($pc_value->conceptName)),$pc_value->conceptNui,$pc_value->conceptKind);
 			}elseif(is_object($result->data->parentConcepts)){
-				$theRow ['parentConcepts'] = $this->build_concept('pname', str_replace(array("/",','),array(' / ',', ') ,trim($result->data->parentConcepts->conceptName)),$result->data->parentConcepts->conceptNui,$result->data->parentConcepts->conceptKind);
+				$theRow ['parentConcepts'] = $this->build_concept('pname', 'Parent Concept '.str_replace(array("/",','),array(' / ',', ') ,trim($result->data->parentConcepts->conceptName)),$result->data->parentConcepts->conceptNui,$result->data->parentConcepts->conceptKind);
 			}
 			// child concepts
 			if(is_array($result->data->childConcepts))
@@ -230,7 +230,7 @@ class rxNormRef{
 			//		echo self::echoProp($theRow['groupProperties']);
 			//		unset($theRow['groupProperties']);
 			//	}
-				echo '<ul><li class="groupPropName"><h3>Related Concepts</h3></li></ul>';
+			//	echo '<ul><li class="groupPropName"><h3>Related Concepts</h3></li></ul>';
 				echo self::echoProp($theRow);
 			}else{
 				echo '<ul><li class="groupPropName"><h2>No Record</h2><p>A record could not be found for the corresponding NUI, please check back later.</h2></li></ul>';
