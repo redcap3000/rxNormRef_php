@@ -171,8 +171,8 @@ class rxNormRef{
 				echo self::echoProp($theRow);
 			}
 			
-			if((!$scd || !$this->cache) && $_POST['nui']){
-				print_r($this);
+			if((!$scd && !$this->cache) && $_POST['nui']){
+				// this may not be catching properly...
 				echo '<ul><li class="groupPropName"><h2>No Record</h2><p>A record could not be found for the corresponding NUI, please check back later.</h2></li></ul>';
 			}	
 		}	
