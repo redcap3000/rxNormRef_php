@@ -169,7 +169,10 @@ class rxNormRef{
 			//	}
 			//	echo '<ul><li class="groupPropName"><h3>Related Concepts</h3></li></ul>';
 				echo self::echoProp($theRow);
-			}elseif(!$scd){
+			}
+			
+			if((!$scd || !$this->cache) && $_POST['nui']){
+				print_r($this);
 				echo '<ul><li class="groupPropName"><h2>No Record</h2><p>A record could not be found for the corresponding NUI, please check back later.</h2></li></ul>';
 			}	
 		}	
@@ -219,11 +222,11 @@ class rxNormRef{
 						elseif(!$this->cache){
 							self::loadNdf();
 							$result = $this->ndfApi->getAllInfo($_POST['nui']);
-						if(!is_object($result)){
+							if(!is_object($result)){
 						// does this friggin work ?!
-									$result = json_decode($result,true);
-									echo self::procResult($result);
-								}
+								$result = json_decode($result,true);
+								echo self::procResult($result);
+							}
 						}	
 
 						if($result && COUCH) $result = self::put_couch($result);
@@ -458,9 +461,14 @@ class rxNormRef{
 				}
 				// Now we get the actual syntax to return the real xml object
 				if($id){
-					unset($scd);
+					unset($this->scd);
 				// make xml is the only way we can cache something? wtf
 					$xml = self::make_xml($id,$formatted);
+					//print_r($xml);
+					if(!is_object($xml)){
+						$xml = json_decode($xml);
+						$this->cache = 4;
+					}
 					// check couch for rxTerms...
 						self::loadRxTerms();
 						$rxTerms = $this->rxTermsApi->getAllRxTermInfo($id);
@@ -468,7 +476,7 @@ class rxNormRef{
 						if($rxTerms == '{"rxtermsProperties":null}' || $rxTerms == '' || $rxTerms == false){
 							;
 						}else{
-							$scd=true;
+							$this->scd=true;
 							$rxTerms = json_decode($rxTerms);
 						
 							echo '<ul><li><h2>RxTerms Properties</h2></li>';
