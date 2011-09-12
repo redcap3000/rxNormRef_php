@@ -97,7 +97,7 @@ class rxNormRef{
 			// parent concepts
 			if(is_array($result->data->parentConcepts)){
 				foreach($result->data->parentConcepts as $pc_key=>$pc_value)
-					$theRow ['parentConcepts'] []= $this->build_concept('pname', 'Parent Name:'.str_replace(array("/",','),array(' / ',', ') ,trim($pc_value->conceptName)),$pc_value->conceptNui,$pc_value->conceptKind);
+					$theRow ['parentConcepts'] []= $this->build_concept('pname',str_replace(array("/",','),array(' / ',', ') ,trim($pc_value->conceptName)),$pc_value->conceptNui,$pc_value->conceptKind);
 			}elseif(is_object($result->data->parentConcepts)){
 				$theRow ['parentConcepts'] = $this->build_concept('pname', 'Parent Concept '.str_replace(array("/",','),array(' / ',', ') ,trim($result->data->parentConcepts->conceptName)),$result->data->parentConcepts->conceptNui,$result->data->parentConcepts->conceptKind);
 			}
@@ -756,10 +756,10 @@ class rxNormRef{
 					if(($key == 'rxcui' || $key == 'umlscui') && !$disable_link) $return .= "\n\t". '<li class="record_'.$key.'">'. "<a href='?".($key=='rxcui'?'r':'u')."=$value'>" .($key=='umlscui' && $value =='' && !$disable_link?'n/a':$value) . "</a></li>";
 					
 					else{
-						if($rowData->tty == 'IN')
-							$return .= "\n\t". '<li class="record_'.$key.'"><a href="ndf.php?s='. $value.'">'.$value.'</a></li>'; 
-						else
-							$return .= "\n\t". '<li class="record_'.$key.'">'. ($rowData->tty=='IN'?'<a href="ndf.php?s='. $result.'">' :NULL) .($key=='umlscui' && $value ==''?'n/a':$value).($rowData->tty=='IN'?'</a>':NULL) . "</li>"; 
+						//if(in_array($rowData->tty,array('PIN','MIN','IN')))
+						//	$return .= "\n\t". '<li class="record_'.$key.'"><a href="ndf.php?s='. $value.'">'.$value.'</a></li>'; 
+						//else
+							$return .= "\n\t". '<li class="record_'.$key.'">'. ($key=='umlscui' && $value ==''?'n/a':$value). "</li>"; 
 						
 						}
 					}
