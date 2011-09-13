@@ -557,6 +557,7 @@ class rxNormRef{
 				$this->couch->new_request(COUCH_HOST . "/" . COUCH_DB);
 			}
 			$tester = trim($this->couch->_request("/$couch_token",GET));
+			
 			if($tester =='{"error":"not_found","reason":"missing"}' || $tester == '{"error":"not_found","reason":"deleted"}' || $tester == '' || $tester == false){
 
 				if($type !='di')
