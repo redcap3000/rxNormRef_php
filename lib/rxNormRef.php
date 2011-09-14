@@ -75,6 +75,7 @@ class rxNormRef{
 				$insert ['rxcui'] = $this->rxcui;
 			elseif($this->nui)
 				$insert ['nui'] = $this->nui;
+				
 			
 			$insert = json_encode($insert);
 			$exec_line = "curl -X POST '" . COUCH_HOST . COUCH_STAT . '/'. "' -d \ '" . $insert ."'".' -H "Content-type: application/json"' ;
