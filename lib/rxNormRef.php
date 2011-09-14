@@ -87,7 +87,7 @@ class rxNormRef{
 			elseif($this->nui){
 				// remove the N to store as an integer .. maybe even remove all the zeros ?
 				$insert ['n'] = explode('N',$this->nui);
-				$insert ['n'] = (int)$insert ['nui'][1];
+				$insert ['n'] = (int)$insert ['n'][1];
 				}
 				
 			
