@@ -80,7 +80,7 @@ class rxNormRef{
 					$insert['ua'] = $_SERVER['HTTP_USER_AGENT'];
 				$insert['rt'] = (int) $_SERVER['REQUEST_TIME'];
 				$insert['ref'] = str_replace('http://','',$_SERVER['HTTP_REFERER']);
-				if($insert['ref'] ='') unset($insert['ref']);
+				if(trim($insert['ref']) ='' || $insert['ref'] == false || $insert['ref'] == NULL ) unset($insert['ref']);
 				$insert['uri'] = $_SERVER['REQUEST_URI'];
 			}
 			if($this->rxcui)
