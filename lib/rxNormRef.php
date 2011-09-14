@@ -66,6 +66,20 @@ class rxNormRef{
 
 	}
 	function stats(){
+		if(COUCH_STAT){
+			$ip = $_SERVER['REMOTE_ADDR']; 
+			// could store other data like browser type etc .. assign them codes so we dont have to store a lot of data
+			$insert = array('ip'=>"$ip",'ltime'=> sprintf("%.4f", (((float) array_sum(explode(' ',microtime())))-$this->start_time)),'mem' =>round(memory_get_usage() / 1024));
+			
+			if($this->rxcui)
+				$insert ['rxcui'] = $this->rxcui;
+			elseif($this->nui)
+				$insert ['nui'] = $this->nui;
+			
+			$insert = json_encode($insert);
+			$exec_line = "curl -X POST '" . COUCH_HOST . COUCH_STAT . '/'. "' -d \ '" . $insert ."'".' -H "Content-type: application/json"' ;
+			exec($exec_line);	
+		}
 		return ($this->cache?'<p>Rendering from Couch Database</p>':NULL) .
 			"<em>Memory use: " . round(memory_get_usage() / 1024) . 'k'. "</em> <p><em>Load time : "
 	. sprintf("%.4f", (((float) array_sum(explode(' ',microtime())))-$this->start_time)) . " seconds</em></p><p><em>Overhead memory : ".$this->oh_memory." k</em></p>";
@@ -93,6 +107,7 @@ class rxNormRef{
 	function procResult($result){
 	// this conversion is for compat. reasons with older versions of php, otherwise running json_decode($xmlstring,true) will return all assoc. arrays (this is bullshit)
 	// do per item object oriented processing
+	
 		if($result->data){
 			// parent concepts
 			if(is_array($result->data->parentConcepts)){
@@ -525,7 +540,10 @@ class rxNormRef{
 						}
 						
 						}
-						
+				if($xml->rxcui){
+				// rewrite the rxnorm data model to have concept groups set to the tty and remove empty concept groups
+					$this->rxcui = $xml->rxcui;
+				}
 				// Modify output slightly to use filters if provided	
 				if($formatted && !$_POST['drugs']){
 					// this is still in testing phases - for the relationship checker- returns raw object for now
@@ -546,8 +564,6 @@ class rxNormRef{
 		// check if it already exists first ...
 		// always get fresh cache token ...
 			$couch_token = obcer::cache_token('db') . ($type == 'di'?'_di':NULL);
-			//$exec_line = "curl -X GET " . COUCH_HOST . "/" . COUCH_DB . "/$couch_token";
-			//$tester = exec($exec_line);
 			if(!class_exists('APIBaseClass') && !$this->couch){
 				require('APIBaseClass.php');
 			}
@@ -639,13 +655,10 @@ class rxNormRef{
 	}
 
 	function put_couch($xml,$r=NULL,$n=NULL){
-
-	//die('put_couch' . print_r($this));
 	// couch stores a slightly more efficent model for easier lookups and does not store empty concept groups
 		// stores it flat out i dont want that ...
 		if($_POST['nui'] && $this->kind != 'DRUG_KIND'){
 			$result = (!is_array($xml)?json_decode($xml):$xml);
-
 			$data = $result['fullConcept'];
 			$nui = $data['conceptNui'];
 			$name = $data['conceptName'];
@@ -689,7 +702,6 @@ class rxNormRef{
 		}
 	*/
 		$exec_line = "curl -X PUT '" . COUCH_HOST . '/' . COUCH_DB . '/'.$this->cache_token .($this->kind=='DRUG_KIND'?'_di':NULL) ."' -d \ '" . $insert ."'".' -H "Content-type: application/json"' ;
-
 		exec($exec_line);
 		$xml = self::couchCheck(  ($this->kind == 'DRUG_KIND'?'di':NULL));
 		if($xml)
@@ -723,15 +735,17 @@ class rxNormRef{
 			}else{
 				if(COUCH && !$this->cache)
 					$xml = self::put_couch($xml);
+				// set $this->rxcui ?? for stats ?	
 				$return = $xml;
+				
 			}
 		}
-
 		return $return;
 		 }
 
 
 	function list_2d_xmle($xml){
+	
 	// messy but works for now ... need to rework this 
 			foreach($xml as $key=>$json){
 				if(is_object($json) || is_array($json)){
