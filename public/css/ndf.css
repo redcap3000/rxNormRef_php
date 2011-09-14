@@ -2,7 +2,7 @@
 
 
 #ndf_content ul {
-
+margin: 0 .35em ;
 }
 #ndf_content ul li.d_int_comment ul {
 width: 50em;clear: both;
@@ -20,7 +20,7 @@ border: none;}
 va_status,vandf_record{
 padding: .25em;
 }
-html{background-color:gray;
+html{background-color:maroon;
 	font-family: "Lucida Grande", Lucida, Verdana, sans-serif;
 }
 
@@ -132,9 +132,8 @@ img.bg_black{
 
 #ndf_content{background-color:white;
 	padding:.39em;
-	padding-bottom:2em;
 	float: left;
-	clear: Both;padding-bottom:4em;width: 100%;min-height: 4em;
+	clear: Both;padding-bottom:1em;width: 100%;
 }
 #ndf_content ul li ul {
 	float: left; margin: .25em;padding-left: .25em;
@@ -313,10 +312,10 @@ margin: .15em .35em;
 }
 
 #help {padding:.5em;
-	border-bottom: solid black 1.25em;
+	background-color: ;
 	float: left;width:100%;text-align:center;
-background-color:maroon;color:white;font-size:.95em;
-min-width:60em;
+color:white;font-size:.95em;
+min-width:60em;padding-top: 1em;
 }
 
 body {
@@ -324,21 +323,23 @@ body {
 }
 
 #help a{
-color:lightgray;
+color:white;
 }
 
 #help ul{
 
+text-align: center;
+min-width:60em;
 
-width:100%;
-
-float:left;
 }
 
 #help ul li {
-       width: 48%; float: left;
-	padding: -1em .5em;min-width:14em;
- 
+       width: 60em; margin: auto;
+	
+}
+
+#help p {color: white;
+	margin: .25em;
 }
 
 
@@ -361,7 +362,7 @@ text-align:center;
 }
 
 .ndf_menu li{
-	float: left;width: 18.27em;text-align:center;
+	float: left;width: 18em;text-align:center;
 	font-weight: bold;padding: .5em 0;
 }
 
