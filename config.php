@@ -1,26 +1,32 @@
 <?php
-
 /* Runtime Options*/
 
 // If turned off pages will load faster, but will also use more 
 // memory and if the api connection hangs so will rendering of the page.
 define('PROGRESSIVE_LOAD', true);
 
-
 /* Couch DB Support Got one ? Get it! Uses exec with curl for virtually no php overhead
   Will be adding more features shortly...
+
   */
+
 define('COUCH',true);
+
 define('COUCH_HOST','http://localhost:5984/');
-// name of stats reporting database, not used if disabled
-//define('COUCH_STAT','stats');
 define('COUCH_DB','test');
 
 
-// When true will use url access instead of 'file_get_contents'. Disabled for compatability.
+// for couch STAT's... COUCH_STAT is the name of the stats database on the same host as COUCH_HOST
 
-// this adds a period to hide cached files in file system  highly recommended if your cache store folder is publicly visible
+define('COUCH_STAT','stats');
 
+// this reports a few more things
+
+define('COUCH_STAT_VERBOSE',false);
+
+// user agent strings can get verbose... disable to cutback on space use.
+
+define('COUCH_STAT_UA',false);
 
 /* 
 	Column Settings - Optional - You probably won't need to change this
