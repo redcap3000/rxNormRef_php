@@ -1,4 +1,5 @@
 <?php
+
 class rxNormRef{
 	static	$normalElements = Array(
 			'TTY'=>'Term Type','IN'=>'Ingredients','PIN'=>'Precise Ingredient',
@@ -66,15 +67,28 @@ class rxNormRef{
 
 	}
 	function stats(){
-		if(COUCH_STAT){
-			$ip = $_SERVER['REMOTE_ADDR']; 
-			// could store other data like browser type etc .. assign them codes so we dont have to store a lot of data
-			$insert = array('ip'=>"$ip",'ltime'=> sprintf("%.4f", (((float) array_sum(explode(' ',microtime())))-$this->start_time)),'mem' =>round(memory_get_usage() / 1024));
+		if(COUCH_STAT == true){
+			// using one letter keys for smaller footprint
+			// bare bones stat options ..
+			$insert['i'] = $_SERVER['REMOTE_ADDR']; 
+			$insert['t'] = (float) sprintf("%.4f", (((float) array_sum(explode(' ',microtime())))-$this->start_time));
+			$insert['m'] = (int) round(memory_get_usage() / 1024);
 			
+			if(COUCH_STAT_VERBOSE == true){
+			// extra options.. user agent is the 'heaviest' .. consider converting to codes or storing unfound user agents to a agents database ?
+				if(COUCH_STAT_UA == true)
+					$insert['ua'] = $_SERVER['HTTP_USER_AGENT'];
+				$insert['rt'] = (int) $_SERVER['REQUEST_TIME'];
+				$insert['ref'] = str_replace('http://','',$_SERVER['HTTP_REFERER']);
+				$insert['uri'] = $_SERVER['REQUEST_URI'];
+			}
 			if($this->rxcui)
-				$insert ['rxcui'] = $this->rxcui;
-			elseif($this->nui)
-				$insert ['nui'] = $this->nui;
+				$insert ['r'] = $this->rxcui;
+			elseif($this->nui){
+				// remove the N to store as an integer .. maybe even remove all the zeros ?
+				$insert ['n'] = explode('N',$this->nui);
+				$insert ['n'] = (int)$insert ['nui'][1];
+				}
 				
 			
 			$insert = json_encode($insert);
