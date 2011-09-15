@@ -1,5 +1,7 @@
 <?php
 
+// to fix drug interactions not rendered back to screen unless they are cached...
+
 class rxNormRef{
 	static	$normalElements = Array(
 			'TTY'=>'Term Type','IN'=>'Ingredients','PIN'=>'Precise Ingredient',
@@ -91,20 +93,21 @@ class rxNormRef{
 				$insert ['n'] = explode('N',$this->nui);
 				$insert ['n'] = (int)$insert ['n'][1];
 				}
-				
-			
 			$insert = json_encode($insert);
-			
-//			https://mediator:password@mediator.cloudant.com/dbname"
-
-	
-			
 			$exec_line = "curl -X POST '" . COUCH_HOST . COUCH_STAT . '/'. "' -d \ '" . $insert ."'".' -H "Content-type: application/json"' ;
-			
-			
 			exec($exec_line);	
 		}
-		return ($this->cache?'<p>Rendering from Couch Database</p>':NULL) .
+		if(COUCH_ERRORS == true){
+			if($this->couch_errors){
+				$couch_errors = "\n";
+				foreach($this->couch_errors as $where=>$error){
+				// give basic dump of json, this only runs when a record isn't PUT (for now) ? could get fancy but for debugging/logging purposes
+					$couch_errors .= "\tinside of :: $where $error\n";
+				}
+			}
+		
+		}
+		return ($this->cache?'<p>Rendering from Couch Database</p>':NULL) . ($couch_errors?"\n<small><strong>Encountered couch api errors:</strong> <br/> $couch_errors</small>\n":NULL).
 			"<em>Memory use: " . round(memory_get_usage() / 1024) . 'k'. "</em> <p><em>Load time : "
 	. sprintf("%.4f", (((float) array_sum(explode(' ',microtime())))-$this->start_time)) . " seconds</em></p><p><em>Overhead memory : ".$this->oh_memory." k</em></p>";
 
@@ -127,6 +130,8 @@ class rxNormRef{
 			return $result;
 	}
 	function procResult($result){
+	
+
 	// Function takes result and creates ndfrt html for screen output, while all fields are stored in the db, not all are outputted
 	// Does a lot of string processing, adds spaces to long slashed names (making page flow easier), changes cases on several occasions, adds spaces to commas
 	// Also checks to see if certain fields become redunant - add linkback to rxcui for rxcui crawling???
@@ -212,12 +217,18 @@ class rxNormRef{
 				echo self::echoProp($theRow);
 		//	}
 			//print_r($this);
-			//print_r($result);
+			
 			if((!$scd && !$this->cache) && $_POST['nui']){
 				// this may not be catching properly...
 				echo '<ul><li class="groupPropName"><h2>No Record</h2><p>A record could not be found for the corresponding NUI, please check back later.</h2></li></ul>';
 			}	
-		}	
+		}
+		else{
+		// attempt to clean data and re-proc result ... ???
+	//	print_r($result['fullConcept']);
+			
+			//print_r($result);
+		}
 	}
 	function post_check(){
 		if($_POST['nui']){
@@ -266,8 +277,17 @@ class rxNormRef{
 							$result = $this->ndfApi->getAllInfo($_POST['nui']);
 							if(!is_object($result)){
 						// does this friggin work ?!
-								$result = json_decode($result,true);
-								echo self::procResult($result);
+								;
+							//	$result = json_decode($result,true);
+								
+								
+								
+								// set other stuff here too ??
+								// so we're not putting the couch properly.... arghhhh because json decode is an array !
+								
+								//$result->data = self::clean_ndf($result_a['fullConcept']);
+								
+								//echo self::procResult($result);
 							}
 						}	
 
@@ -393,6 +413,7 @@ class rxNormRef{
 						$drug_inter = $this->ndfApi->findDrugInteractions($this->nui,3);
 						if(COUCH){
 						// uh oh how to retreve record if it exists ??
+							$this->drug_inter = true;
 							self::put_couch($drug_inter);
 						}
 						
@@ -629,6 +650,7 @@ class rxNormRef{
 			else{
 				if($type !='di'){
 					$this->cache =4;
+				
 					return $tester;
 				}else{
 				
@@ -697,17 +719,21 @@ class rxNormRef{
 	}
 
 	function put_couch($xml,$r=NULL,$n=NULL){
+	
 	// couch stores a slightly more efficent model for easier lookups and does not store empty concept groups
 		// stores it flat out i dont want that ...
 		if($_POST['nui'] && $this->kind != 'DRUG_KIND'){
-			$result = (!is_array($xml)?json_decode($xml):$xml);
+			$result = (!is_array($xml)?json_decode($xml,true):$xml);
+			//print_r($result);
 			$data = $result['fullConcept'];
+			
 			$nui = $data['conceptNui'];
 			$name = $data['conceptName'];
 			$kind = $data['conceptKind'];
 			unset($data['conceptNui'],$data['conceptName'],$data['conceptKind']);
 			// group associations need work too @!! gotta write this for the non 'find concepts == on' too 
 			$data = self::clean_ndf($data);
+			
 			// next append the couch stuff to the data .. not sure how ... could just decode them both before inserting...
 			$data = json_encode($data);
 			$insert = '{"_id": "'.$this->cache_token.'",
@@ -715,6 +741,9 @@ class rxNormRef{
 			"name":"'.$name.'",
 			"kind":"'.$kind.'",
 			"data":'.$data.'}';
+			
+			
+			
 		}elseif($r!=NULL){
 		// stores regular rxnorm record 
 			// re render cache token just incase the term isn't properly rendered
@@ -743,14 +772,26 @@ class rxNormRef{
 			
 		}
 	*/
-		$exec_line = "curl -X PUT '" . COUCH_HOST . '/' . COUCH_DB . '/'.$this->cache_token .($this->kind=='DRUG_KIND'?'_di':NULL) ."' -d \ '" . $insert ."'".' -H "Content-type: application/json"' ;
-		exec($exec_line);
-		$xml = self::couchCheck(  ($this->kind == 'DRUG_KIND'?'di':NULL));
-		if($xml)
-		// show the newly created record in its intended format
-			self::procResult(json_decode($xml));
+		//$insert = str_replace('"','%22',$insert);
+	
+		$exec_line = "curl -X PUT '" . COUCH_HOST . '/' . COUCH_DB . '/'.$this->cache_token .($this->kind=='DRUG_KIND' && $this->drug_inter?'_di':NULL) ."' -d \ '" . $insert ."'".' -H "Content-type: application/json"' ;
+		// if this line fails.. and its common just put back out there (json utf issue that needs some work)
+		$exec_line = exec($exec_line);
+		// this is running and not checking for the appropriate record, find another way to check
+		// get first couple of chars to see if 'ok:true' is found
+		//{"ok":true,"id":"n0000000007__on","rev":"1-0c0aad438c4b12fdf1fbddbb4764f21a"}
+		$exc_check = explode(',',$exec_line);
+		
+		if(trim($exc_check[0]) == '{"ok":true'){
+		// render from couch instead of object.. probably not great idea ... but also checks drug interactions when available ..
+			self::procResult(json_decode($insert));
+		}else{
+			// log error (not cached)
+			$this->couch_errors ['put_couch']= $exec_line;
+			self::procResult(json_decode($insert));
+		}
 		// don't have to return anything do i?
-		return  ($xml?$xml: false);
+		return  ($xml?true: false);
 
 	}
 	function make_xml($id,$formatted=false){
