@@ -76,11 +76,12 @@ class rxNormRef{
 			
 			if(COUCH_STAT_VERBOSE == true){
 			// extra options.. user agent is the 'heaviest' .. consider converting to codes or storing unfound user agents to a agents database ?
+			// perhaps couch can be smart about it and compress similar values? we'll see...
 				if(COUCH_STAT_UA == true)
 					$insert['ua'] = $_SERVER['HTTP_USER_AGENT'];
 				$insert['rt'] = (int) $_SERVER['REQUEST_TIME'];
 				$insert['ref'] = str_replace('http://','',$_SERVER['HTTP_REFERER']);
-				if(trim($insert['ref']) ='' || $insert['ref'] == false || $insert['ref'] == NULL ) unset($insert['ref']);
+				if( trim($insert['ref']) =='' || $insert['ref'] == false || $insert['ref'] == NULL ) unset($insert['ref']);
 				$insert['uri'] = $_SERVER['REQUEST_URI'];
 			}
 			if($this->rxcui)
@@ -93,7 +94,14 @@ class rxNormRef{
 				
 			
 			$insert = json_encode($insert);
+			
+//			https://mediator:password@mediator.cloudant.com/dbname"
+
+	
+			
 			$exec_line = "curl -X POST '" . COUCH_HOST . COUCH_STAT . '/'. "' -d \ '" . $insert ."'".' -H "Content-type: application/json"' ;
+			
+			
 			exec($exec_line);	
 		}
 		return ($this->cache?'<p>Rendering from Couch Database</p>':NULL) .
@@ -425,7 +433,6 @@ class rxNormRef{
 		
 		// some simple array processing for the post variables when arrays are present
 
-
 		$cached=obcer::ob_cacher();
 		// chacing isn't being done properly here for the basic searches .. we dont get in a couch check anywheres...
 		if($cached == TRUE) return 0;
@@ -586,11 +593,29 @@ class rxNormRef{
 			
 			if(!$this->couch){
 				$this->couch = new APIBaseClass();
-				$this->couch->new_request(COUCH_HOST . "/" . COUCH_DB);
+				
+				if(COUCH_VIEW != true)
+				// if this fails just get it from where it was put - perhaps rep. hasn't happened ..
+					$this->couch->new_request(COUCH_HOST . "/" . COUCH_DB);
+				elseif(COUCH_VIEW_HOST){
+					
+					$this->couch->new_request(COUCH_VIEW_HOST);
+					
+					}
+					
 			}
 			$tester = trim($this->couch->_request("/$couch_token",GET));
 			
 			if($tester =='{"error":"not_found","reason":"missing"}' || $tester == '{"error":"not_found","reason":"deleted"}' || $tester == '' || $tester == false){
+			
+				if(COUCH_VIEW){
+					$this->couch->new_request(COUCH_HOST . "/" . COUCH_DB);
+					$tester = trim($this->couch->_request("/$couch_token",GET));
+					if($tester !='{"error":"not_found","reason":"missing"}' && $tester != '{"error":"not_found","reason":"deleted"}' && $tester != '' && $tester != false){
+						$this->cache =4;
+						return $tester;
+						}
+				}
 
 				if($type !='di')
 					unset($this->cache);
@@ -599,9 +624,7 @@ class rxNormRef{
 				return false;
 				}
 			else{
-				//print_r(json_decode($tester));	
 				if($type !='di'){
-			
 					$this->cache =4;
 					return $tester;
 				}else{
