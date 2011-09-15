@@ -1,7 +1,5 @@
 <?php
 
-// to fix drug interactions not rendered back to screen unless they are cached...
-
 class rxNormRef{
 	static	$normalElements = Array(
 			'TTY'=>'Term Type','IN'=>'Ingredients','PIN'=>'Precise Ingredient',
@@ -101,13 +99,13 @@ class rxNormRef{
 			if($this->couch_errors){
 				$couch_errors = "\n";
 				foreach($this->couch_errors as $where=>$error){
-				// give basic dump of json, this only runs when a record isn't PUT (for now) ? could get fancy but for debugging/logging purposes
+				// give basic dump of json ? could get fancy but for debugging/logging purposes
 					$couch_errors .= "\tinside of :: $where $error\n";
 				}
 			}
 		
 		}
-		return ($this->cache?'<p>Rendering from Couch Database</p>':NULL) . ($couch_errors?"\n<small><strong>Encountered couch api errors:</strong> <br/> $couch_errors</small>\n":NULL).
+		return ($this->cache?'<p>Rendering from Couch Database' . ($this->cache == 5? ' from view only couchdb':NULL) . '</p>' :NULL) . ($couch_errors?"\n<small><strong>Encountered couch api errors:</strong> <br/> $couch_errors</small>\n":NULL).
 			"<em>Memory use: " . round(memory_get_usage() / 1024) . 'k'. "</em> <p><em>Load time : "
 	. sprintf("%.4f", (((float) array_sum(explode(' ',microtime())))-$this->start_time)) . " seconds</em></p><p><em>Overhead memory : ".$this->oh_memory." k</em></p>";
 
@@ -220,7 +218,8 @@ class rxNormRef{
 			
 			if((!$scd && !$this->cache) && $_POST['nui']){
 				// this may not be catching properly...
-				echo '<ul><li class="groupPropName"><h2>No Record</h2><p>A record could not be found for the corresponding NUI, please check back later.</h2></li></ul>';
+				;
+			//	echo '<ul><li class="groupPropName"><h2>No Record</h2><p>A record could not be found for the corresponding NUI, please check back later.</h2></li></ul>';
 			}	
 		}
 		else{
@@ -415,6 +414,8 @@ class rxNormRef{
 						// uh oh how to retreve record if it exists ??
 							$this->drug_inter = true;
 							self::put_couch($drug_inter);
+							$drug_inter = json_decode($drug_inter);
+							$drug_inter = $drug_inter->data->groupInteractions->interactions;
 						}
 						
 						$drug_inter = json_decode($drug_inter);
@@ -617,7 +618,7 @@ class rxNormRef{
 			
 			if(!$this->couch){
 				$this->couch = new APIBaseClass();
-				
+	
 				if(COUCH_VIEW != true)
 				// if this fails just get it from where it was put - perhaps rep. hasn't happened ..
 					$this->couch->new_request(COUCH_HOST . "/" . COUCH_DB);
@@ -631,13 +632,18 @@ class rxNormRef{
 			$tester = trim($this->couch->_request("/$couch_token",GET));
 			
 			if($tester =='{"error":"not_found","reason":"missing"}' || $tester == '{"error":"not_found","reason":"deleted"}' || $tester == '' || $tester == false){
-			
-				if(COUCH_VIEW){
+					$this->couch_errors['couchCheck'] = $tester;
+				if(COUCH_VIEW == true){
+					
 					$this->couch->new_request(COUCH_HOST . "/" . COUCH_DB);
 					$tester = trim($this->couch->_request("/$couch_token",GET));
 					if($tester !='{"error":"not_found","reason":"missing"}' && $tester != '{"error":"not_found","reason":"deleted"}' && $tester != '' && $tester != false){
-						$this->cache =4;
+						// let stats know that it was served up from 'view only' couch db
+						$this->cache = 5;
 						return $tester;
+						}else{
+						
+						$this->couch_errors['couchCheck_COUCH_VIEW'] = $tester;
 						}
 				}
 
@@ -648,12 +654,16 @@ class rxNormRef{
 				return false;
 				}
 			else{
+			// mainly for reporting where the cache is coming from for debugging purposes
+				if(COUCH_VIEW == true){
+					$this->cache = 5;
+					return $tester;
+				}
+
 				if($type !='di'){
 					$this->cache =4;
-				
 					return $tester;
 				}else{
-				
 					$this->cache_di = true;
 					return $tester;
 				}
@@ -763,16 +773,7 @@ class rxNormRef{
 			"data":'.$xml.'}';
 
 		}
-	// hijack base class??
-	// having probs sending the curl so use exec for now .. :/
-	/*
-		if($this->couch){
-			$couch_exec =  '/'.$this->cache_token .($this->kind=='DRUG_KIND'?'_di':NULL) ."' -d \ '" . $insert ."'";
-			die($this->couch->_request($couch_exec,'PUT',false,array('Content-type: application/json')));
-			
-		}
-	*/
-		//$insert = str_replace('"','%22',$insert);
+
 	
 		$exec_line = "curl -X PUT '" . COUCH_HOST . '/' . COUCH_DB . '/'.$this->cache_token .($this->kind=='DRUG_KIND' && $this->drug_inter?'_di':NULL) ."' -d \ '" . $insert ."'".' -H "Content-type: application/json"' ;
 		// if this line fails.. and its common just put back out there (json utf issue that needs some work)
@@ -785,6 +786,7 @@ class rxNormRef{
 		if(trim($exc_check[0]) == '{"ok":true'){
 		// render from couch instead of object.. probably not great idea ... but also checks drug interactions when available ..
 			self::procResult(json_decode($insert));
+			// this needs to be different for durg interaction ???
 		}else{
 			// log error (not cached)
 			$this->couch_errors ['put_couch']= $exec_line;
@@ -795,7 +797,7 @@ class rxNormRef{
 
 	}
 	function make_xml($id,$formatted=false){
-
+	// get rid of this function and handle via couchCheck /put_couch
 		if(COUCH && !$this->cache){
 			$xml = self::couchCheck();
 			if($xml != false)
@@ -805,7 +807,9 @@ class rxNormRef{
 		if(!$this->cache){
 			self::loadRxNorm();
 			$xml = $this->api->getAllRelatedInfo($id);
-			if(COUCH) $xml = self::put_couch($xml,$id);
+			//die(print_r(json_decode($xml)));
+		//	if(COUCH) self::put_couch($xml,$id);
+			
 				$check = json_decode($xml);
 				$check2 = $check->allRelatedGroup->conceptGroup;
 				foreach($check2 as $object){
@@ -817,7 +821,7 @@ class rxNormRef{
 				return false;
 			}else{
 				if(COUCH && !$this->cache)
-					$xml = self::put_couch($xml);
+					self::put_couch($xml);
 				// set $this->rxcui ?? for stats ?	
 				$return = $xml;
 				
