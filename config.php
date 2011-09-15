@@ -28,6 +28,12 @@ define('COUCH_STAT_VERBOSE',false);
 
 define('COUCH_STAT_UA',false);
 
+// use this if you have another database that is linked (replicated) to the couch host to show existing records from
+// i.e. record gets stored to one database, is automatically rep. to another, then is served back from the other with super simple api call
+// ex : https://<username>:<password>@couch.host/databasename
+//define('COUCH_VIEW_HOST','https://me:mypass7@awesomeness.mycloudhost.com/database');
+define('COUCH_VIEW',false);
+
 /* 
 	Column Settings - Optional - You probably won't need to change this
 */
