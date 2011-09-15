@@ -1,3 +1,5 @@
+/* @override http://myparse.net/sb7/public//css/ndf.css */
+
 /* @override http://myparse.net/sb7/public/css/ndf.css */
 
 
@@ -56,7 +58,7 @@ float: right;clear:both; margin-right:1em;
 }
 
 #ndf_content ul li.pname {
-float: right;clear:left;margin: .75em;
+float: right;clear:left;margin: .95em;
 	font-style: italic;
 	text-decoration: none; border-right: solid maroon .25em;
 }
@@ -73,7 +75,7 @@ text-align: center;
 }
 
 #ndf_content ul li.cname {clear: right;
-	width: 24%;
+	width: 48%;
 	font-size: 1.21em;
 	margin: 0;
 	border-left: solid maroon .4em;margin: .15em 0;
@@ -155,10 +157,9 @@ float: left;
 }
 
 #ndf_content ul p,#ndf_content ul strong{
-margin: 1.1em;
+margin: 0 2.8em; width: 22em; float: left;
 	font-family: Palatino, "Lucida Grande", serif;
 }
-
 
 #ndf_content ul li.groupPropName{
 	width: 42.75em;
