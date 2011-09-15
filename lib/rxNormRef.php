@@ -116,10 +116,8 @@ class rxNormRef{
 		foreach($prop as $k=>$x){
 			if($title != false)
 				$result.= "\n<ul><li>$k</li></ul>\n";
-			
 			if(is_array($x)){
 				$x = array_unique($x);
-
 				foreach($x as $here)
 					$result .= "\n\t<ul>\n\t\t" . $here . "\n\t\t\n\t</ul>\n";
 				}
@@ -129,16 +127,19 @@ class rxNormRef{
 			return $result;
 	}
 	function procResult($result){
-	// this conversion is for compat. reasons with older versions of php, otherwise running json_decode($xmlstring,true) will return all assoc. arrays (this is bullshit)
-	// do per item object oriented processing
-	
+	// Function takes result and creates ndfrt html for screen output, while all fields are stored in the db, not all are outputted
+	// Does a lot of string processing, adds spaces to long slashed names (making page flow easier), changes cases on several occasions, adds spaces to commas
+	// Also checks to see if certain fields become redunant - add linkback to rxcui for rxcui crawling???
 		if($result->data){
 			// parent concepts
 			if(is_array($result->data->parentConcepts)){
 				foreach($result->data->parentConcepts as $pc_key=>$pc_value)
 					$theRow ['parentConcepts'] []= $this->build_concept('pname',str_replace(array("/",','),array(' / ',', ') ,trim($pc_value->conceptName)),$pc_value->conceptNui,$pc_value->conceptKind);
 			}elseif(is_object($result->data->parentConcepts)){
-				$theRow ['parentConcepts'] = $this->build_concept('pname', str_replace(array("/",','),array(' / ',', ') ,trim($result->data->parentConcepts->conceptName)),$result->data->parentConcepts->conceptNui,$result->data->parentConcepts->conceptKind);
+			
+				$theRow ['parentConcepts'] []= $this->build_concept('pname', str_replace(array("/",','),array(' / ',', ') ,trim($result->data->parentConcepts->conceptName)),$result->data->parentConcepts->conceptNui,$result->data->parentConcepts->conceptKind);
+			//	print_r($theRow);
+			
 			}
 			// child concepts
 			if(is_array($result->data->childConcepts))
@@ -161,7 +162,6 @@ class rxNormRef{
 				foreach($result->data->groupProperties as $gp_key=>$gp_value){
 					if ($gp_key == 'Display_Name' || $gp_key == 'label' || $gp_key == 'kind'){
 							if($gp_key == 'label'){
-							
 								// could do this better maybe with multiple string functions..
 								$gp_value = explode('[',str_replace('/',' / ',$gp_value));
 								
@@ -189,6 +189,8 @@ class rxNormRef{
 							else{
 								$sym .= ", $gp_value";
 								}
+						}elseif($gp_key == 'RxNorm_CUI'){
+								$rxcui = $gp_value;
 						}
 						else{
 					//	$inV = ucwords(str_replace(array("/",','),array(' / ',', '),strtolower(trim($inV))));
@@ -199,17 +201,18 @@ class rxNormRef{
 
 		}
 			// wanted to show group properties first ...
-			if($group_property_name){
-				echo "<ul><li class='groupPropName'><h2>".ucwords(strtolower($group_property_name)).  ($group_level?" : $group_level</h2>" : '</h2>') .'</li>'. ($group_status?"<h3>$group_status</h3>":NULL). ($mesh_def?"<p>$mesh_def</p>":NULL)  . ($sym?"<br/><strong>Synonyms : <em>$sym</em>  </strong>":NULL) . '</li></ul>'  ;
+			if($group_property_name || $group_level){
+				echo "<ul><li class='groupPropName'><h2>". ($rxcui && $this->kind == 'DRUG_KIND'? '<a href="index.php?r='.$rxcui.'">':NULL) . ($group_property_name?ucwords(strtolower($group_property_name) .':') :NULL).  ($group_level?"  $group_level" : NULL) . ($rxcui && $this->kind == 'DRUG_KIND'? '</a>':NULL) .'</li>'. ($group_status?"<h3>$group_status</h3>":NULL). ($mesh_def?"<p>$mesh_def</p>":NULL)  . ($sym?"<br/><strong>Synonyms : <em>$sym</em>  </strong>":NULL) . '</li></ul>'  ;
 			//	if($theRow['groupProperties']){
 				
 			//		echo self::echoProp($theRow['groupProperties']);
 			//		unset($theRow['groupProperties']);
-			//	}
+				}
 			//	echo '<ul><li class="groupPropName"><h3>Related Concepts</h3></li></ul>';
 				echo self::echoProp($theRow);
-			}
-			
+		//	}
+			//print_r($this);
+			//print_r($result);
 			if((!$scd && !$this->cache) && $_POST['nui']){
 				// this may not be catching properly...
 				echo '<ul><li class="groupPropName"><h2>No Record</h2><p>A record could not be found for the corresponding NUI, please check back later.</h2></li></ul>';
