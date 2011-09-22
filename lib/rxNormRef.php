@@ -31,9 +31,7 @@ class rxNormRef{
 				require 'rxTermsApi.php';
 				$this->rxTermsApi = new rxTermsApi(null,'json');
 				$this->rxTermsVersion = $this->rxTermsApi->getRxTermsVersion();
-				
 			}
-	
 	}
 	function __construct(){
 		$this->cache_token = obcer::cache_token((COUCH?'db':NULL));
@@ -542,7 +540,7 @@ class rxNormRef{
 							$this->scd=true;
 							$rxTerms = json_decode($rxTerms);
 						
-							echo '<ul><li><h2>RxTerms Properties</h2></li>';
+							echo '<ul class="rxterms"><li><h2 class="property">RxTerms Properties</h2></li>';
 							foreach($rxTerms->rxtermsProperties as $name=>$value){
 								if(trim($value) != '')
 									{
@@ -593,17 +591,6 @@ class rxNormRef{
 					$this->rxcui = $xml->rxcui;
 				}
 				// Modify output slightly to use filters if provided	
-				if($formatted && !$_POST['drugs']){
-					// this is still in testing phases - for the relationship checker- returns raw object for now
-					if($_POST['relatedBy'])
-						self::list_2d_xmle($xml);
-					else
-						self::list_2d_xmle($xml->relatedGroup->conceptGroup);
-					}
-				elseif($xml->allRelatedGroup)
-					self::list_2d_xmle($xml->allRelatedGroup->conceptGroup);
-				elseif($xml->data->allRelatedGroup)
-					self::list_2d_xmle($xml->data->allRelatedGroup->conceptGroup);
 				}
 	}
 	
@@ -729,12 +716,11 @@ class rxNormRef{
 	}
 
 	function put_couch($xml,$r=NULL,$n=NULL){
-	
+
 	// couch stores a slightly more efficent model for easier lookups and does not store empty concept groups
 		// stores it flat out i dont want that ...
 		if($_POST['nui'] && $this->kind != 'DRUG_KIND'){
 			$result = (!is_array($xml)?json_decode($xml,true):$xml);
-			//print_r($result);
 			$data = $result['fullConcept'];
 			
 			$nui = $data['conceptNui'];
@@ -761,6 +747,8 @@ class rxNormRef{
 			$insert = '{"_id": "'.$this->cache_token.'",
 			"rxcui":"'.($r!=NULL?$r:'').'",
 			"data":'.$xml.'}';
+			
+			
 		
 		}elseif($this->nui && $this->kind == 'DRUG_KIND'){
 		// since nui drugkind is set after the cache is returned this should be ok 
@@ -776,6 +764,8 @@ class rxNormRef{
 
 	
 		$exec_line = "curl -X PUT '" . COUCH_HOST . '/' . COUCH_DB . '/'.$this->cache_token .($this->kind=='DRUG_KIND' && $this->drug_inter?'_di':NULL) ."' -d \ '" . $insert ."'".' -H "Content-type: application/json"' ;
+		
+		
 		// if this line fails.. and its common just put back out there (json utf issue that needs some work)
 		$exec_line = exec($exec_line);
 		// this is running and not checking for the appropriate record, find another way to check
@@ -800,8 +790,11 @@ class rxNormRef{
 	// get rid of this function and handle via couchCheck /put_couch
 		if(COUCH && !$this->cache){
 			$xml = self::couchCheck();
-			if($xml != false)
-				return json_decode($xml);
+			if($xml != false){
+			// wait a sec... this is only required if we are searching rxnorm ...
+				$xml = json_decode($xml);
+				echo self::displayRxNorm($xml->data);
+				}
 			}
 
 		if(!$this->cache){
@@ -820,10 +813,48 @@ class rxNormRef{
 				echo  ('Record did not return any matching RxNorm records');
 				return false;
 			}else{
-				if(COUCH && !$this->cache)
-					self::put_couch($xml);
+
 				// set $this->rxcui ?? for stats ?	
 				$return = $xml;
+				$return = json_decode($return);
+				
+				$return = $return->allRelatedGroup;
+				
+				if(count($return->conceptGroup) > 1){
+					foreach($return->conceptGroup as $concept){
+						foreach($concept->conceptProperties as $item){
+						// reform the json document, set tty's as array keys, and rxcui's as array keys for the concept properties 
+						// results in more logical selection, and smaller record sizes, could take step further and remove use of keys for concept properties
+							$tty = $item->tty;
+							$rxcui = $item->rxcui;
+							unset($item->rxcui,$item->tty);
+						// suppress empty values, repetitive values, including the 'language' and 'suppress' columns (which are almost 100% 'ENG' and 'N'
+							foreach($item as $key2=>$value2)					
+								if( ($value2 == '' || $value2 == ' ' || trim($value2) == '' )   ||  ($key2=='language' && $value2 == 'ENG')   || ($key2=='suppress' && $value2 == 'N')  )
+									unset($item->$key2);
+							$new_object[$tty] [$rxcui]= $item;
+
+						}
+						
+					}
+					// to do rewrite the function that processes the 'make_xml' result ... change the name of 'make_xml' to make_rxnorm
+					// store drug interactions in a similar format in same record ?
+				//	print_r($new_object);
+					
+					
+					// show this new object properly... not sure how ... the list_2d_xmle is effing up ...
+					//die(self::list_2d_xmle($new_object));
+					unset($return);
+					
+					
+					echo self::displayRxNorm($new_object);
+					
+					$xml = json_encode($new_object);
+				}
+				
+				if(COUCH && !$this->cache){
+					self::put_couch($xml,$rxcui);
+					}
 				
 			}
 		}
@@ -831,51 +862,29 @@ class rxNormRef{
 		 }
 
 
-	function list_2d_xmle($xml){
+	function displayRxNorm($new_object){
 	
-	// messy but works for now ... need to rework this 
-			foreach($xml as $key=>$json){
-				if(is_object($json) || is_array($json)){
-				$result = '';
-					foreach($json as $key2=>$showme2){
-						foreach($showme2 as $process)
-					 		$result .= self::show_row($process);
-					}
-				}
-				echo ($json->conceptProperties || $json->name ?"\n\t<ul>\n\t\t<li class='property'>".  (self::$normalElements[strtoupper($json->tty)]?self::$normalElements[strtoupper($json->tty)]:$json->tty)  ."</li>\n\t</ul>":NULL);
-				if($result != $old_result) echo "\n\t<ul>\n<li>".$result."</li>\n</ul>\n";
-				$old_result = $result;	
-			}
-		
-	}
-
-	function show_row($rowData){
-	// should combine this into the other existing row processor...
-		foreach($rowData as $key=>$value){
-			//echo $rowData->tty;
-			if($rowData->tty == 'DF') $disable_link = true;
-			else $disable_link= false;
-			if(!in_array($key,$this->c_filter)){
-				if( (SUPPRESS_EMPTY_COL && $value == '')) ;
-				else{
-					$value = htmlentities($value);
+	
+		foreach($new_object as $key=>$value){
 				
-					// adjust here for pretty URLS
-					// if(PRETTY_GET_URLS)
-					// also adjust for key on dose form - prevent does form rows from having rxcui/umlscui links
-					if(($key == 'rxcui' || $key == 'umlscui') && !$disable_link) $return .= "\n\t". '<li class="record_'.$key.'">'. "<a href='?".($key=='rxcui'?'r':'u')."=$value'>" .($key=='umlscui' && $value =='' && !$disable_link?'n/a':$value) . "</a></li>";
+					if(is_array($value) && count($value) > 1){
+					// now we have multiples of the same subject heading 
+					// tty becomes $key
 					
-					else{
-						//if(in_array($rowData->tty,array('PIN','MIN','IN')))
-						//	$return .= "\n\t". '<li class="record_'.$key.'"><a href="ndf.php?s='. $value.'">'.$value.'</a></li>'; 
-						//else
-							$return .= "\n\t". '<li class="record_'.$key.'">'. ($key=='umlscui' && $value ==''?'n/a':$value). "</li>"; 
-						
-						}
+						;
+					
 					}
+					
+					$return .= "\n\t<ul><li><ul>\n\t\t<li class='property'>".  (self::$normalElements[strtoupper($key)]?self::$normalElements[strtoupper($key)]:$key)  ."</li>\n\t</ul></li><li><ul class='".$key."'>";
+					foreach($value as $rxcui=>$prop_object){
+						$return .= "\n\t". '<li><ul><li>'. "<h3><a href='?r=$rxcui'>" . $prop_object->name . "</a></h3>" .  "</li>" . ($prop_object->synonym?"<li>$prop_object->synonym</li>":NULL) . ($prop_object->umlscui?"<li class='uml'><a href='?u=$prop_object->umlscui'>UMLSCUI: $prop_object->umlscui</a></li>":NULL)  .'</ul></li>';
+					
+					}
+					$return .= "</ul></li></ul>";
+				
+				
 				}
-		}
-		return "\n\t<ul>\n\t\t$return\n\t\t</ul>\n";
+		return ($return?$return:false);
 	}
 }
  new RxNormRef;
