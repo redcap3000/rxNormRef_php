@@ -1,82 +1,146 @@
-hr {
-/*
-temporary fix
-*/	
-	width: 800px;	clear: none;
-	border: none;
-	float: left;
-}
+/* @override http://myparse.net/git/rxNormRef_php/public/css/fixed_field.css */
 
-p{
-clear:both;}
 
-#header{float: right;clear: none;width: 100%;border-bottom: solid black 1px; margin-bottom: 10px;}
-ul {
-	list-style-type: none;	
-	clear: right;
-	float: left;margin: 0px 0;padding: 0px;
-}
-
-li.value {
-	padding-top: 2px;
-}
-
-li.property {
-	width: 760px;
-	padding: 0px 0;
-	margin-top: 20px;
-	font-size: 24px;
-	color: maroon;text-align: left;
-	border-top: solid black 1px;
+html{
 	font-family: Arial, san-serif;
 }
 
-.main_form, h1 {padding: 15px 0;margin: 0;
-	float: left;width: 33%;
-	font-family: "Helvetica Neue", Arial, Helvetica, Geneva, sans-serif;
+#header{
+
+	height: auto;
 }
 
-.main_form fieldset{	padding-top: 10px;border: none;float: left;clear: none;}
-
-ul li ul li.property{
-	background-color: none;
-	font-size: 17px;border: none;	
-	text-align:left;
-	padding: 0;width: 180px;padding-left: 10px;
+#header a{
+	font-size: 1em;float: right;
+	margin-top: .2em;margin-right: 1em;
 }
-ul ul{
+a{
+	text-decoration: none;
+}
+
+a:hover{
+	text-decoration: underline;
+}
+
+
+#help em{
+	font-size: 1.2em;
+	font-style: normal;
+	font-weight: bold;
+	text-align: center;
+}
+
+#page {
+	margin: 1em auto ;
+	width: 60em;
+}
+
+ul{
+	list-style-type: none;margin: 0;padding: 0;
+
+}
+
+#content ul li ul.SCDC li ul li.uml {
+text-align: right;float: left;	
+}
+
+
+	
+img.bg_black{
+	background-color: blue;
+}
+
+#content{
+	width: 60em;
+	float: left;border-bottom: solid maroon 4px;
+}
+
+#content p.term_result {
+	border-top: solid maroon .25em;
+	padding: .925em .5em;text-align:center;margin: 0;
+}
+
+
+
+#content ul li ul li ul {
+width: 28.5em;float: left;clear: none;
+margin: .45em .5em;
+}
+
+.property{
+	clear: both;
+	color: maroon;
+	font-weight: bold;
+	text-align: left;
+	font-size: 1.9em;
+	padding: .75em 0 .25em 0;
 	border: none;
-	width: 800px;
-    padding: 10px;margin: 0;
-	position:relative;
-	left:10px;margin-bottom:-20px;
+	}
+
+#content ul li.umlscui{
+	clear: both;width: 100%;
+	text-align: right;
+	margin: 1em;
 }
 
-
-ul li ul li{
-	margin: 0;
-	border: none;padding: 0 10px;background-color: none;
+#content ul li ul.SCDC li ul li.uml {
+	text-align: right;margin: .45em 0em;
 }
 
-ul li ul{
-	background-color: whitesmoke;
-	border: none;
-	clear: left;
-	width: 190px; float: left; 
-	padding: 0;margin: 0;
+.record_rxcui{
+	font-weight: bold;
+	font-family: "Courier New", Courier, mono;
+	padding: .4em .55em;margin: 0;
+	width: 18.05em;
+	margin-bottom: .5em;
+	letter-spacing: .14em;background-color: lightgray;
+	z-index: -2;
 }
 
-#help {clear: both;	}
-html{background-color: gray;}
-
-body{
-	background-color: whitesmoke;
-	width: 800px;
-	margin: 10px auto;
-	padding: 10px;
+.record_umlscui {
+	font-weight: bold;
+	float: right;
+	text-align: right;
+	width: 18.15em;
+	padding:  .3em .5em;
+	letter-spacing: .11em;
+	margin-top: .75em;
+	background-color: gray;
 }
 
-h3 {clear: both;}
-h4,b,p,h3{
-	margin: 5px;clear: none;
+.record_umlscui a{
+	color: white;
 }
+
+#help {
+	width: 60em;
+	border-top: solid maroon .25em;
+	float: left;
+
+}
+
+#help ul li {
+	width: 45%;float: left;
+padding: 1.5em;
+}
+
+#help img{
+	float: left;margin: 10px 10px 80px 10px;
+}
+
+#help ul li a{
+	text-align:center; width: 100%;
+}
+
+#stats {
+	display:none;
+}
+
+#content ul li ul.BPCK li,#content ul li ul.GPCK li{
+	width: 58em;
+}
+
+#content ul.rxterms {
+clear: Both;	
+}
+
