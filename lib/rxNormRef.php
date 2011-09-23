@@ -5,7 +5,7 @@ class rxNormRef{
 			'TTY'=>'Term Type','IN'=>'Ingredients','PIN'=>'Precise Ingredient',
 			'MIN'=>'Multiple Ingredients','DF'=>'Dose Forms','SCDC'=>'Semantic Clinical Drug Components',
 			'SCDF'=>'Semantic Clinical Drug Forms','BN'=>'Brand Names','SBDC'=>'Semantic Branded Drug Forms',
-			'SBDF'=>'Semantic Branded Drug Forms','SBD'=>'Semantic Branded Drug','SY'=>'Term Type',
+			'SBDF'=>'Semantic Branded Drug Forms','SBD'=>'Semantic Branded Drug','SY'=>'Term Type','SCD'=>'Semantic Clinical Drug',
 			'TMSY'=>'Term Type','BPCK'=>'Brand Name Pack','GPCK'=>'Generic Pack');
 	function loadRxNorm(){
 		if(!class_exists('APIBaseClass')) 
@@ -38,15 +38,7 @@ class rxNormRef{
 		$this->start_time = (float) array_sum(explode(' ',microtime()));
 		$this->oh_memory = round(memory_get_usage() / 1024);
 		// set up the 'filter' variable to determine what columns to show
-		if(SHOW_ALL == FALSE){
-			if(SHOW_LANGUAGE == false  ) $this->c_filter []='language';
-			if(SHOW_SUPPRESS == false) $this->c_filter []='suppress';
-			if(SHOW_RXCUI == false) $this->c_filter []='rxcui';
-			if(SHOW_NAME == false) $this->c_filter []='name';
-			if(SHOW_ALL_SYNONYM == FALSE) $this->c_filter []= 'synonym';
-			if(SHOW_TTY == false) $this->c_filter []='tty';
-			if(SHOW_UML == false) $this->c_filter []= 'umlscui';
-		}
+		
 		// of course I could make a checkbox panel to allow for any combination of display fields, and cache entire returned xml results to do manipulations
 		if(PROGRESSIVE_LOAD){
    	 	    @apache_setenv('no-gzip', 1);
@@ -234,6 +226,7 @@ class rxNormRef{
 						if($result != false) {
 							$this->cache = 4;
 							$result = json_decode($result);
+						
 							$this->nui = $result->nui;
 							$this->kind = $result->kind;
 							
@@ -400,58 +393,125 @@ class rxNormRef{
 					}
 				// loads post 'drug interactions' specfically from NDFrt but I think it may link itself to the rxnorm set..
 				// this stuff needs to be cached, not all terms have drug interactions so it might be good to limit this lookup to 'DRUG_KIND''s
-				if($_POST['drug_inter'] != 'on' && $result && $this->kind == 'DRUG_KIND'){	
+				if($result && $this->kind == 'DRUG_KIND'){	
+				
 					// check for drug interactions, store in database as another record append di to the cache token
 					$drug_inter = self::couchCheck('di');
+					
+				
 					// obviously if couch is disabled this below will run (not supported for xml/json file caching just yet)
 					if($drug_inter == false){
 						self::loadNdf();
 						// set the kind and check if kind is of 'DRUG_KIND"
 						$drug_inter = $this->ndfApi->findDrugInteractions($this->nui,3);
+						
+						$drug_inter = json_decode($drug_inter);
+						
+						
+						//print_r($drug_inter);
+						
+						$inputNui = $drug_inter->responseType->inputNui1;
+						
+						$drug_inter = $drug_inter->groupInteractions->interactions[0];
+						
+						
+						if($inputNui != $drug_inter->concept->conceptNui)
+							$drug_inter->inputNui = $inputNui;
+						else{
+						// dont display the comment if the nui entered is the nui resolved
+							unset($drug_inter->comment);
+						}	
+						
+						$drug_inter->concept = $drug_inter->concept[0];
+						
+						$drug_inter->name = $drug_inter->concept->conceptName;
+						
+						
+						$drug_inter->nui= $drug_inter->concept->conceptNui;
+						if($drug_inter->concept->conceptKind != 'DRUG_KIND')
+							$drug_inter->kind= $drug_inter->concept->conceptKind;
+						unset($drug_inter->concept);
+						
+						$drug_inter->groupInteractingDrugs = $drug_inter->groupInteractingDrugs[0]->interactingDrug;
+						
+						foreach($drug_inter->groupInteractingDrugs as $loc=>$drug){
+							$drug->name = $drug->concept[0]->conceptName;
+							$drug_nui = $drug->concept[0]->conceptNui;
+							$drug_sev = $drug->severity;
+							if($drug->concept[0]->conceptKind != 'DRUG_KIND')
+								$drug->kind = $drug->concept[0]->conceptKind;
+							unset($drug->concept);
+							unset($drug_inter->groupInteractingDrugs);
+							unset($drug->severity);
+							
+							// for interactions .. are currently only checked for drug_kinds.. but just incase this is here..
+							// display functions will need to be modified..
+							if($drug->kind)
+								$drug_inter->interactions[$drug_sev][$drug_nui] = $drug;
+							else
+								$drug_inter->interactions[$drug_sev][$drug_nui] = $drug->name;
+						
+						}
+						
+						//die(print_r($drug_inter));
 						if(COUCH){
 						// uh oh how to retreve record if it exists ??
 							$this->drug_inter = true;
-							self::put_couch($drug_inter);
-							$drug_inter = json_decode($drug_inter);
-							$drug_inter = $drug_inter->data->groupInteractions->interactions;
+							// does this need to  be json i'm assumming...
+							$drug_inter_p = json_encode($drug_inter);
+							self::put_couch($drug_inter_p);
+							//$drug_inter = json_decode($drug_inter);
+							//$drug_inter = $drug_inter->data->groupInteractions->interactions;
 						}
 						
-						$drug_inter = json_decode($drug_inter);
-						$drug_inter = $drug_inter->groupInteractions->interactions;
+						//$drug_inter = json_decode($drug_inter);
+						//$drug_inter = $drug_inter->groupInteractions->interactions;
 						
 					}else{
 					// if we want to do file caching need to change couchCheck to
 					// drug interaction response could use rewriting groupInteractingDrugs->interactingDrug->(interactiongDrug[0]->concept
+						$this->drug_inter = true;
 						$drug_inter = json_decode($drug_inter);
-						$drug_inter = $drug_inter->data->groupInteractions->interactions;
 
 					}
 
-					if($drug_inter[0]){ 
-							$drug_inter = $drug_inter[0];
+					if($this->drug_inter = true && $drug_inter->data->interactions || $drug_inter->interactions){ 
+					// interactions not always showing.. might need to move rewriting of interactions to an external functions like the rxnorm ...
+						//print_r($drug_inter);	
 						echo '
 						<ul>
 						<li class="a_title">Drug Interactions</li>
-						<li class="d_int_comment"><ul><li>'.$drug_inter->comment."</li></ul></li>";
-						
+						'.($drug_inter->data->comment?'<li class="d_int_comment"><ul><li>'.$drug_inter->data->comment."</li>":NULL)."</ul></li>";
+
 							// json decode moves the object around a wee bit..
-							foreach($drug_inter->groupInteractingDrugs[0]->interactingDrug as $u){
-								if($u->concept[0]->conceptName != '')
-									echo self::build_concept('interacting_drug',$u->concept[0]->conceptName . ' (' . $u->severity . ')',$u->concept[0]->conceptNui,$u->concept[0]->conceptKind);
+
+						if($drug_inter->data->interactions)	
+							$drug_inter->interactions = $drug_inter->data->interactions; 
+						foreach($drug_inter->interactions as $sev=>$drug){
+							// sev = severity, drug is the single line in the array 
+							$title = $sev;
+							//die($title);
+							echo "<ul><li><ul><li><strong>$title</strong></li></ul><li><ul>";
+							foreach($drug as $nui=>$name){
+								// make a link in comma sep. list ..
+									
+									echo "<li><a href='ndf.php?n=$nui'>".strtolower($name)."</a></li>";
+									
+								}
+							echo "</ul></li>";
+							
 							}
 
 					echo "</ul>";
 					}
 					
 					else{
-				//	echo 'hi';
+							print_r($drug_inter);
 						// report that NUI doesn't have any reported interactions at this time...
 							unset($drug_inter);
 							
 					}
-				// could just add this to the result and store that instead of making more records ?
 				}	
-				
 				}	
 		
 		// some simple array processing for the post variables when arrays are present
@@ -525,7 +585,6 @@ class rxNormRef{
 					unset($this->scd);
 				// make xml is the only way we can cache something? wtf
 					$xml = self::make_xml($id,$formatted);
-					//print_r($xml);
 					if(!is_object($xml)){
 						$xml = json_decode($xml);
 						$this->cache = 4;
@@ -800,7 +859,6 @@ class rxNormRef{
 		if(!$this->cache){
 			self::loadRxNorm();
 			$xml = $this->api->getAllRelatedInfo($id);
-			//die(print_r(json_decode($xml)));
 		//	if(COUCH) self::put_couch($xml,$id);
 			
 				$check = json_decode($xml);
@@ -839,11 +897,7 @@ class rxNormRef{
 					}
 					// to do rewrite the function that processes the 'make_xml' result ... change the name of 'make_xml' to make_rxnorm
 					// store drug interactions in a similar format in same record ?
-				//	print_r($new_object);
-					
-					
 					// show this new object properly... not sure how ... the list_2d_xmle is effing up ...
-					//die(self::list_2d_xmle($new_object));
 					unset($return);
 					
 					
@@ -863,7 +917,10 @@ class rxNormRef{
 
 
 	function displayRxNorm($new_object){
-	
+	// to do .. turn dose forms into a comma seperated list , without links.
+	// do the same for brand names (if multiples exist) but w create links. MIN PIN IN
+	// reorder the items to display more logically ...  Example : dose forms and semantical clinical drug forms are essentially the same thing ..
+	// turn things into drop down menus ?
 	
 		foreach($new_object as $key=>$value){
 				
@@ -877,7 +934,8 @@ class rxNormRef{
 					
 					$return .= "\n\t<ul><li><ul>\n\t\t<li class='property'>".  (self::$normalElements[strtoupper($key)]?self::$normalElements[strtoupper($key)]:$key)  ."</li>\n\t</ul></li><li><ul class='".$key."'>";
 					foreach($value as $rxcui=>$prop_object){
-						$return .= "\n\t". '<li><ul><li>'. "<h3><a href='?r=$rxcui'>" . $prop_object->name . "</a></h3>" .  "</li>" . ($prop_object->synonym?"<li>$prop_object->synonym</li>":NULL) . ($prop_object->umlscui?"<li class='uml'><a href='?u=$prop_object->umlscui'>UMLSCUI: $prop_object->umlscui</a></li>":NULL)  .'</ul></li>';
+						unset($prop_object->umlscui);
+						$return .= "\n\t". '<li><ul><li>'. "<h3><a href='?r=$rxcui'>" . str_replace(array('/','-',','),array(' / ','-', ','),trim($prop_object->name)) . "</a></h3>" .  "</li>" . ($prop_object->synonym?"<li>$prop_object->synonym</li>":NULL) . ($prop_object->umlscui?"<li class='uml'><a href='?u=$prop_object->umlscui'>$prop_object->umlscui</a></li>":NULL)  .'</ul></li>';
 					
 					}
 					$return .= "</ul></li></ul>";
