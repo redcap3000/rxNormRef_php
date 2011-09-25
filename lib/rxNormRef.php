@@ -316,6 +316,8 @@ class rxNormRef{
 							
 							$result = $this->ndfApi->getAllInfo($_POST['nui']);
 							$r2 = json_decode($result);
+							
+							
 							if($r2->fullConcept->conceptKind == 'DRUG_KIND'){
 								self::drugInteractions();
 							}
@@ -525,6 +527,13 @@ class rxNormRef{
 			$this->drug_inter = true;
 		}
 // may need to do things to make sure the drug_inter has stuff in it...
+
+		if($drug_inter->interactions){
+		// need to do this better..
+		echo 'not cached?';
+			$drug_inter->data->interactions = $drug_inter->interactions;
+		}
+
 		if($drug_inter->data->interactions){ 
 		// interactions not always showing.. might need to move rewriting of interactions to an external functions like the rxnorm ...
 			echo '
@@ -782,15 +791,22 @@ class rxNormRef{
 		// get first couple of chars to see if 'ok:true' is found
 		//{"ok":true,"id":"n0000000007__on","rev":"1-0c0aad438c4b12fdf1fbddbb4764f21a"}
 		$exc_check = explode(',',$exec_line);
-		if(trim($exc_check[0]) == '{"ok":true' && $ml == false){
+		if(trim($exc_check[0]) == '{"ok":true'){
 		// render from couch instead of object.. probably not great idea ... but also checks drug interactions when available ..
-			self::procResult(json_decode($insert));
+			
+			if($ml == false && $this->kind != 'DRUG_KIND' && $_POST['nui'])	
+				self::procResult(json_decode($insert));
+			if($this->kind == 'DRUG_KIND'){
+				// look up drug interaction ?
+					self::drugInteractions();
+			}	
 			// this needs to be different for durg interaction ???
 		}elseif($ml == false){
 			// log error (not cached)
 			$this->couch_errors ['put_couch']= $exec_line;
-			self::procResult(json_decode($insert));
+			//self::procResult(json_decode($insert));
 		}
+		
 		// don't have to return anything do i?
 		// return the inserted record to be decoded json ...
 		return  ($xml?json_decode($insert): false);
