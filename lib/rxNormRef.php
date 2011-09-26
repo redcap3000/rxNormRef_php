@@ -81,18 +81,24 @@ class rxNormRef{
 				'</ul>';
 		
 		echo ($result->data->MeSH_Definition?'<ul><li><p>' . $result->data->MeSH_Definition . '</p></li></ul>':NULL) . ($result->data->MeSH_Name && $result->data->MeSH_Name =! $result->data->Display_Name? ' MeSh Name: '.$result->data->MeSH_Name:NULL); 
-	
+
 		if($result->data->drugInteractions != 'none')
 			echo self::displayDrugInteractions($result->data->drugInteractions);
 
 		
 		if($result->data->medline != 'none'){
-			$medline = $result->data->medline;
-			if(!is_array($medline['entry']['summary']) && $medline['entry']['summary'] != '') echo "<ul><li><h3>MedLine: <a href='".$medline['entry']['link']['@attributes']['href']."'>".$medline['entry']['title']."</a></h3></li><li class='medline'>".$medline['entry']['summary']."</li></ul>";
-		
-		}
 
-		unset($result->data->drugInteractions,$result->data->Class_Description,$result->data->Class_Code,$result->data->Level,$result->data->SNOMED_CID,$result->data->MeSH_CUI,$result->data->MeSH_DUI,$result->data->label,$result->data->code,$result->data->RxNorm_CUI,$result->data->Synonym,$result->data->Display_Name,$result->data->NUI,$result->data->MeSH_Name,$result->data->MeSH_Definition,$result->data->VUID,$result->data->VANDF_Record,$result->data->UMLS_CUI,$result->data->Status);
+			// medline needs to be converted into assoc arrays because of the @attributes key... easiest way is to do this :
+			$medline = json_encode($result->data->medline);
+			
+			$medline = json_decode($medline,true);
+			//print_r($medline);
+			if(!is_array($medline['entry']['summary']) && $medline['entry']['summary'] != '') echo "<ul><li><h3>MedLine: <a href='".$medline['entry']['link']['@attributes']['href']."'>".$medline['entry']['title']."</a></h3></li><li class='medline'>".$medline['entry']['summary']."</li></ul>";
+					
+		}
+		
+
+		unset($result->data->medline,$result->data->drugInteractions,$result->data->Class_Description,$result->data->Class_Code,$result->data->Level,$result->data->SNOMED_CID,$result->data->MeSH_CUI,$result->data->MeSH_DUI,$result->data->label,$result->data->code,$result->data->RxNorm_CUI,$result->data->Synonym,$result->data->Display_Name,$result->data->NUI,$result->data->MeSH_Name,$result->data->MeSH_Definition,$result->data->VUID,$result->data->VANDF_Record,$result->data->UMLS_CUI,$result->data->Status);
 		
 		$childConcepts = $result->data->childConcepts;
 		$parentConcepts = $result->data->parentConcepts;
@@ -181,6 +187,8 @@ class rxNormRef{
 				
 				$r2 = $this->clean_ndf($r2['fullConcept']);
 				
+				print_r($r2);
+				
 				if($this->kind == 'DRUG_KIND'){
 					self::cleanDrugInteractions();
 					
@@ -188,24 +196,40 @@ class rxNormRef{
 						$r2['drugInteractions'] = json_decode($this->drugInteraction);
 					
 					}
-					if($r2['SNOMED_CID']){
+					
+					
+				}
+				
+				if($r2['SNOMED_CID']){
+					
 						//$medline_check = self::couchCheck('_ml');
 						//if($medline_check==false){
 						$this->loadMedLine();
-						$medline = $this->medlinePlusApi->get_diagnosis($result->data->SNOMED_CID,'SNOMED');
+						$medline = $this->medlinePlusApi->get_diagnosis($r2['SNOMED_CID'],'SNOMED');
 						$medline = json_decode($medline,true);
-						// store result !! ??
-						//self::put_couch(json_encode($medline),NULL,NULL,true);
-						$r2['medline'] = json_encode($medline);
+						
+						print_r($medline);
+						
+						if(!$medline['entry']){
+							$r2['medline'] = 'none';
+						}else{
+						
+						//	die('snomed!!');
+							// store result !! ??
+							//self::put_couch(json_encode($medline),NULL,NULL,true);
+							$r2['medline'] = $medline;
+						}
 					}
-					
-				}
+				
 				$result = $r2;	
 			}	
 			if($result && COUCH) {
+				
 				$insert = '{"_id": "'.$this->cache_token.'","title":"'.$result['conceptName'].'","kind":"'.$result['conceptKind'].'"}';
 				
 				$insert = json_decode($insert);
+				
+				
 				// determine if drug interactions is 'empty' and store a false value instead of ugly structure...
 				
 				// prevents lookup of non-existant drug interactions with default caching behavior
@@ -218,6 +242,7 @@ class rxNormRef{
 				unset($result['conceptName'],$result['conceptKind'],$result['conceptNui']);
 				
 				$insert->data = $result;
+			//	die(print_r($insert));
 				$insert = json_encode($insert);
 				$exec_line = "curl -X PUT '" . COUCH_HOST . '/' . COUCH_DB . '/'.$this->cache_token ."' -d \ '" . str_replace("'","'\''",$insert) ."'".' -H "Content-type: application/json"' ;
 				$exec_line = exec($exec_line);
