@@ -7,44 +7,13 @@ class rxNormRef{
 			'SCDF'=>'Semantic Clinical Drug Forms','BN'=>'Brand Names','SBDC'=>'Semantic Branded Drug Forms',
 			'SBDF'=>'Semantic Branded Drug Forms','SBD'=>'Semantic Branded Drug','SY'=>'Term Type','SCD'=>'Semantic Clinical Drug',
 			'TMSY'=>'Term Type','BPCK'=>'Brand Name Pack','GPCK'=>'Generic Pack');
-	function loadRxNorm(){
-		if(!class_exists('APIBaseClass')) 
-			require 'APIBaseClass.php';	
-		if(!class_exists('rxNormApi')){
-			require 'rxNormApi.php';
-			$this->api = new rxNormApi;	
-			$this->api->setOutputType('json');	
-		}
-	}
-	function loadNdf(){
-		if(!class_exists('APIBaseClass')) require 'APIBaseClass.php';
-			if(!class_exists('ndfRTApi')){
-				require 'ndfRTApi.php';
-				$this->ndfApi = new ndfRTApi;
-				$this->ndfApi->setOutputType('json');
-			}
-	}
-	function loadRxTerms(){
-		if(!class_exists('APIBaseClass')) require 'APIBaseClass.php';
-			if(!class_exists('rxTermsApi')){
-				require 'rxTermsApi.php';
-				$this->rxTermsApi = new rxTermsApi(null,'json');
-				$this->rxTermsVersion = $this->rxTermsApi->getRxTermsVersion();
-			}
-	}
-	function loadMedLine(){
-			if(!class_exists('APIBaseClass')) require 'APIBaseClass.php';
-			if(!class_exists('medlinePlusApi')){
-				require 'medlinePlusApi.php';
-				// little override that should hope to return json responses... with some conversion..
-				$this->medlinePlusApi = new medlinePlusApi(null,'json');
-			}
-	}
 
 	function __construct(){
 		$this->cache_token = obcer::cache_token((COUCH?'db':NULL));
 		$this->start_time = (float) array_sum(explode(' ',microtime()));
 		$this->oh_memory = round(memory_get_usage() / 1024);
+	
+		
 		// set up the 'filter' variable to determine what columns to show
 		
 		// of course I could make a checkbox panel to allow for any combination of display fields, and cache entire returned xml results to do manipulations
@@ -64,68 +33,7 @@ class rxNormRef{
 		echo '<div id="stats">' . $this->stats().'</div>';
 
 	}
-	function stats(){
-		if(COUCH_STAT == true){
-			// using one letter keys for smaller footprint
-			// bare bones stat options ..
-			$insert['i'] = $_SERVER['REMOTE_ADDR']; 
-			$insert['t'] = (float) sprintf("%.4f", (((float) array_sum(explode(' ',microtime())))-$this->start_time));
-			$insert['m'] = (int) round(memory_get_usage() / 1024);
-			
-			if(COUCH_STAT_VERBOSE == true){
-			// extra options.. user agent is the 'heaviest' .. consider converting to codes or storing unfound user agents to a agents database ?
-			// perhaps couch can be smart about it and compress similar values? we'll see...
-				if(COUCH_STAT_UA == true)
-					$insert['ua'] = $_SERVER['HTTP_USER_AGENT'];
-				$insert['rt'] = (int) $_SERVER['REQUEST_TIME'];
-				$insert['ref'] = str_replace('http://','',$_SERVER['HTTP_REFERER']);
-				if( trim($insert['ref']) =='' || $insert['ref'] == false || $insert['ref'] == NULL ) unset($insert['ref']);
-				$insert['uri'] = $_SERVER['REQUEST_URI'];
-			}
-			if($this->rxcui)
-				$insert ['r'] = $this->rxcui;
-			elseif($this->nui){
-				// remove the N to store as an integer .. maybe even remove all the zeros ?
-				$insert ['n'] = explode('N',$this->nui);
-				$insert ['n'] = (int)$insert ['n'][1];
-				}
-			$insert = json_encode($insert);
-			$exec_line = "curl -X POST '" . COUCH_HOST . COUCH_STAT . '/'. "' -d \ '" . $insert ."'".' -H "Content-type: application/json"' ;
-			exec($exec_line);	
-		}
-		if(COUCH_ERRORS == true){
-			if($this->couch_errors){
-				$couch_errors = "\n";
-				foreach($this->couch_errors as $where=>$error){
-				// give basic dump of json ? could get fancy but for debugging/logging purposes
-					$couch_errors .= "\tinside of :: $where $error\n";
-				}
-			}
-		
-		}
-		return ($this->cache?'<p>Rendering from Couch Database' . ($this->cache == 5? ' from view only couchdb':NULL) . '</p>' :NULL) . ($couch_errors?"\n<small><strong>Encountered couch api errors:</strong> <br/> $couch_errors</small>\n":NULL).
-			"<em>Memory use: " . round(memory_get_usage() / 1024) . 'k'. "</em> <p><em>Load time : "
-	. sprintf("%.4f", (((float) array_sum(explode(' ',microtime())))-$this->start_time)) . " seconds</em></p><p><em>Overhead memory : ".$this->oh_memory." k</em></p>";
 
-	}
-	function build_concept($value,$c_name,$c_nui,$c_kind=NULL){
-		return '<li class="'.htmlentities($value).'"><ul><li class="conceptName">'. '<a href="?n='.$c_nui. '">' . htmlentities(ucwords(strtolower($c_name))) . "</a></li></ul></li>\n";
-	}
-	function echoProp($prop,$key=false){
-		foreach($prop as $k=>$x){
-			if($title != false)
-				$result.= "\n<ul><li>$k</li></ul>\n";
-			if(is_array($x)){
-				$x = array_unique($x);
-				foreach($x as $here)
-					$result .= "\n\t<ul>\n\t\t" . $here . "\n\t\t\n\t</ul>\n";
-				}
-			else
-				$result .= "\n\t<ul>\n\t\t" . $x . "\n\t\t\n\t</ul>\n";
-			}
-			return $result;
-	}
-	
 	function cleanName($name,$ucwords=false){
 	// function 'sanitizes' most of the 'names' returned by the api's (they are often in uppercase, 
 	// sometimes have underscores, often have / and - with out spaces (making it very hard to do any text flow
@@ -133,7 +41,9 @@ class rxNormRef{
 		return ($ucwords == false? $result : ucwords($result));
 	
 	}
+	// proc result prints out the NDF display based on a '$result'
 	function procResult($result){
+		
 		if($result->data){
 			// create linked line from keys  instead of list item ... what about mesh defs?
 			// padd rxnorm rxcui with zeros!
@@ -172,47 +82,17 @@ class rxNormRef{
 		
 		echo ($result->data->MeSH_Definition?'<ul><li><p>' . $result->data->MeSH_Definition . '</p></li></ul>':NULL) . ($result->data->MeSH_Name && $result->data->MeSH_Name =! $result->data->Display_Name? ' MeSh Name: '.$result->data->MeSH_Name:NULL); 
 	
-		if($result->data->SNOMED_CID){
-		// cache this somehow... 
+		if($result->data->drugInteractions != 'none')
+			echo self::displayDrugInteractions($result->data->drugInteractions);
+
 		
-			$medline_check = self::couchCheck('_ml');
-			
-			//die(print_r($medline_check));
-			
-			if($medline_check==false){
-			
-				$this->loadMedLine();
-				$medline = $this->medlinePlusApi->get_diagnosis($result->data->SNOMED_CID,'SNOMED');
-				$medline = json_decode($medline,true);
-				self::put_couch(json_encode($medline),NULL,NULL,true);
-				
-				}
-			else{
-				//$medline =json_decode($medline,true);
-				$medline = $medline_check['data'];
-			
-			}	
-			// self::couchCheck('medLine_d');
-			
-			// to do make a medline cleaner, cache the medline .. create object attr... eventually create an attribute for each result from each api.. and perhaps
-			// store that instead of three seperate objects to reduce couch db'ing ... not sure how much memory overhead this may cause tho for uncached records..
+		if($result->data->medline != 'none'){
+			$medline = $result->data->medline;
 			if(!is_array($medline['entry']['summary']) && $medline['entry']['summary'] != '') echo "<ul><li><h3>MedLine: <a href='".$medline['entry']['link']['@attributes']['href']."'>".$medline['entry']['title']."</a></h3></li><li class='medline'>".$medline['entry']['summary']."</li></ul>";
 		
 		}
-		/*
-		if($result->data->RxNorm_CUI && $result->kind == 'DRUG_KIND'){
-			$this->loadMedLine();
-			
-			$medline = $this->medlinePlusApi->get_drug_info($result->data->RxNorm_CUI);
-			$medline = json_decode($medline,true);
-			// MED line server LAGGSS
-		
-		}
-		*/
-	
-		//elseif($medline['entry'])	echo "<ul><li><h4>" $medline['entry']['link']['@attributes']['href'] . "MedLine drug Results </a></li></ul>";
 
-		unset($result->data->Class_Description,$result->data->Class_Code,$result->data->Level,$result->data->SNOMED_CID,$result->data->MeSH_CUI,$result->data->MeSH_DUI,$result->data->label,$result->data->code,$result->data->RxNorm_CUI,$result->data->Synonym,$result->data->Display_Name,$result->data->NUI,$result->data->MeSH_Name,$result->data->MeSH_Definition,$result->data->VUID,$result->data->VANDF_Record,$result->data->UMLS_CUI,$result->data->Status);
+		unset($result->data->drugInteractions,$result->data->Class_Description,$result->data->Class_Code,$result->data->Level,$result->data->SNOMED_CID,$result->data->MeSH_CUI,$result->data->MeSH_DUI,$result->data->label,$result->data->code,$result->data->RxNorm_CUI,$result->data->Synonym,$result->data->Display_Name,$result->data->NUI,$result->data->MeSH_Name,$result->data->MeSH_Definition,$result->data->VUID,$result->data->VANDF_Record,$result->data->UMLS_CUI,$result->data->Status);
 		
 		$childConcepts = $result->data->childConcepts;
 		$parentConcepts = $result->data->parentConcepts;
@@ -272,71 +152,93 @@ class rxNormRef{
 	}
 	function post_check(){
 		if($_POST['nui']){
-				if(COUCH){
-					$result = self::couchCheck();
-					if($result != false) {
-						$this->cache = 4;
-						$this->nui = $result->nui;
-						$this->kind = $result->kind;
-						// move group properties to the top of the object for faster search results ?
-						self::procResult($result);
-						// spit it out to screen ????
+			if(COUCH){
+				$result = self::couchCheck();
+				if($result != false) {
+					$this->cache = 4;
+					$this->nui = $result->nui;
+					$this->kind = $result->kind;
+					// move group properties to the top of the object for faster search results ?
+					self::procResult($result);
+					// spit it out to screen ????
+				}
+
+			}
+		if(!$this->cache || $_POST['s']){
+
+			self::loadNdf();
+			if(!$this->cache){
+			// BUILDS THE NDF Page - determines if its a drug kind, and then looks up interactions .. also looksup SNOMED_CID if 
+			// found .. and will store the entire repsonses from medline
+			// needs some variable cleanup
+				self::loadNdf();
+				$result2 = $this->ndfApi->getAllInfo($_POST['nui']);
+				
+				$r2 = json_decode($result2,true);
+
+				$this->nui = $_POST['nui'];
+				$this->kind = $r2['fullConcept']['conceptKind'];
+				
+				$r2 = $this->clean_ndf($r2['fullConcept']);
+				
+				if($this->kind == 'DRUG_KIND'){
+					self::cleanDrugInteractions();
+					
+					if($this->drugInteraction){
+						$r2['drugInteractions'] = json_decode($this->drugInteraction);
+					
 					}
+					if($r2['SNOMED_CID']){
+						//$medline_check = self::couchCheck('_ml');
+						//if($medline_check==false){
+						$this->loadMedLine();
+						$medline = $this->medlinePlusApi->get_diagnosis($result->data->SNOMED_CID,'SNOMED');
+						$medline = json_decode($medline,true);
+						// store result !! ??
+						//self::put_couch(json_encode($medline),NULL,NULL,true);
+						$r2['medline'] = json_encode($medline);
+					}
+					
 				}
-				if(!$this->cache || $_POST['s']){
-						self::loadNdf();
-					// run curl in background??	
-						// this processing is for when people want to search by name or they click a link to search the term in RxNorm (COMING SOON!!)
-						if($_POST['findConcepts'] != 'on'){
-						// change this around ?
-							$result = $this->ndfApi->findConceptsByName($_POST['nui'],'DRUG_KIND');
-							$result = json_decode($result);
+				$result = $r2;	
+			}	
+			if($result && COUCH) {
+				$insert = '{"_id": "'.$this->cache_token.'","title":"'.$result['conceptName'].'","kind":"'.$result['conceptKind'].'"}';
+				
+				$insert = json_decode($insert);
+				// determine if drug interactions is 'empty' and store a false value instead of ugly structure...
+				
+				// prevents lookup of non-existant drug interactions with default caching behavior
 
-							$result_count = $result->groupConcepts[0]->concept;
-							// figure out result count ...
-							// switch result output based on xml or json...
-							if($result_count == 0)
-								{ echo"<p class='term_result'>Term <em>" .$_POST['nui'] . "</em> did not return any matching concepts. Please check your spelling.</p>";
-									unset($result);
-									}
-
-							if(!$this->cache && $result){
-								$return .= '<ul>';
-								foreach($result->groupConcepts[0]->concept as $ic)
-									$return .=  self::build_concept($ic->conceptKind,str_replace('_',' ',$ic->conceptKind) .' ' . $ic->conceptName,$ic->conceptNui)  ;
-								$return .= '</ul>';
-								
-								echo $return;
-								// exit the logical flow... 
-								return true;
-							}
-						}
-						elseif(!$this->cache){
-							self::loadNdf();
-							
-							$result = $this->ndfApi->getAllInfo($_POST['nui']);
-							$r2 = json_decode($result);
-							
-							
-							if($r2->fullConcept->conceptKind == 'DRUG_KIND'){
-								self::drugInteractions();
-							}
-						//	unset($r2);
-						}	
-						if($result && COUCH) $result = self::put_couch($result);
+				if($result['drugInteractions']->name == '')
+					$result['drugInteractions'] = 'none';
+				// not working ....	
+				// remove repetitve fields as they are not needed.. 
+				
+				unset($result['conceptName'],$result['conceptKind'],$result['conceptNui']);
+				
+				$insert->data = $result;
+				$insert = json_encode($insert);
+				$exec_line = "curl -X PUT '" . COUCH_HOST . '/' . COUCH_DB . '/'.$this->cache_token ."' -d \ '" . str_replace("'","'\''",$insert) ."'".' -H "Content-type: application/json"' ;
+				$exec_line = exec($exec_line);
+				// this is running and not checking for the appropriate record, find another way to check
+				// get first couple of chars to see if 'ok:true' is found
+				//{"ok":true,"id":"n0000000007__on","rev":"1-0c0aad438c4b12fdf1fbddbb4764f21a"}
+				$exc_check = explode(',',$exec_line);
+				
+				if(trim($exc_check[0]) != '{"ok":true'){
+					// render from couch instead of object.. probably not great idea ... but also checks drug interactions when available ..
+					$this->couch_errors['put_couch'][]= $exec_line;	
+				}else{
+				// should show the record ....
+					self::procResult(json_decode($insert));
 				}
-				// is this needed for ndf ?
 
-				// loads post 'drug interactions' specfically from NDFrt but I think it may link itself to the rxnorm set..
-				// this stuff needs to be cached, not all terms have drug interactions so it might be good to limit this lookup to 'DRUG_KIND''s
-				
-				// this kind not set for this to happen...
-				
-				if($this->kind == 'DRUG_KIND'){	
-					self::drugInteractions();
-				
-					}	
-				}	
+			}
+			
+		}
+
+		}	
 		// some simple array processing for the post variables when arrays are present
 		$cached=obcer::ob_cacher();
 		// chacing isn't being done properly here for the basic searches .. we dont get in a couch check anywheres...
@@ -414,6 +316,7 @@ class rxNormRef{
 					// check couch for rxTerms...
 						self::loadRxTerms();
 						$rxTerms = $this->rxTermsApi->getAllRxTermInfo($id);
+						// store this value...
 						
 						if($rxTerms == '{"rxtermsProperties":null}' || $rxTerms == '' || $rxTerms == false){
 							;
@@ -472,103 +375,61 @@ class rxNormRef{
 				}
 	}
 
-	function drugInteractions(){
-	// check for drug interactions, store in database as another record append di to the cache token
-		$drug_inter = self::couchCheck('_di');
-		// obviously if couch is disabled this below will run (not supported for xml/json file caching just yet)
-		if($drug_inter == false){
-			self::loadNdf();
-			// set the kind and check if kind is of 'DRUG_KIND"
-			$drug_inter = $this->ndfApi->findDrugInteractions($this->nui,3);
-			$drug_inter = json_decode($drug_inter);
-			$inputNui = $drug_inter->responseType->inputNui1;
-			$drug_inter = $drug_inter->groupInteractions->interactions[0];
-			if($inputNui != $drug_inter->concept->conceptNui)
-				$drug_inter->inputNui = $inputNui;
-			else
-			// dont display the comment if the nui entered is the nui resolved
-				unset($drug_inter->comment);
-			$drug_inter->concept = $drug_inter->concept[0];
-			$drug_inter->name = $drug_inter->concept->conceptName;
-			$drug_inter->nui= $drug_inter->concept->conceptNui;
-			if($drug_inter->concept->conceptKind != 'DRUG_KIND')
-				$drug_inter->kind= $drug_inter->concept->conceptKind;
-			unset($drug_inter->concept);
-			
-			$drug_inter->groupInteractingDrugs = $drug_inter->groupInteractingDrugs[0]->interactingDrug;
-			foreach($drug_inter->groupInteractingDrugs as $loc=>$drug){
-				$drug->name = $drug->concept[0]->conceptName;
-				$drug_nui = $drug->concept[0]->conceptNui;
-				$drug_sev = $drug->severity;
-				if($drug->concept[0]->conceptKind != 'DRUG_KIND')
-					$drug->kind = $drug->concept[0]->conceptKind;
-				unset($drug->concept);
-				unset($drug_inter->groupInteractingDrugs);
-				unset($drug->severity);
-				
-				// for interactions .. are currently only checked for drug_kinds.. but just incase this is here..
-				// display functions will need to be modified..
-				if($drug->kind)
-					$drug_inter->interactions[$drug_sev][$drug_nui] = $drug;
-				else
-					$drug_inter->interactions[$drug_sev][$drug_nui] = $drug->name;
-			
-			}
-
-			if(COUCH){
-				$this->drug_inter = true;
-				$drug_inter_p = json_encode($drug_inter);
-				// put couch SHOULD return the new record that gets stored .. instead of having to deal with two types of crap..
-				$drug_inter = self::put_couch($drug_inter_p);
-			}
-		}else{
-		// if we want to do file caching need to change couchCheck to
-		// drug interaction response could use rewriting groupInteractingDrugs->interactingDrug->(interactiongDrug[0]->concept
-			$this->drug_inter = true;
-		}
-// may need to do things to make sure the drug_inter has stuff in it...
-
-		if($drug_inter->interactions){
-		// need to do this better..
-		echo 'not cached?';
-			$drug_inter->data->interactions = $drug_inter->interactions;
-		}
-
-		if($drug_inter->data->interactions){ 
-		// interactions not always showing.. might need to move rewriting of interactions to an external functions like the rxnorm ...
-			echo '
-			<ul>
-			<li class="a_title"><h3>Drug Interactions</h3></li>
-			'.($drug_inter->data->comment?'<li class="d_int_comment"><ul><li><p>'.$drug_inter->data->comment."</p></li>":NULL)."</ul></li>";
-				// json decode moves the object around a wee bit..
-			if($drug_inter->data->interactions)	
-				$drug_inter->interactions = $drug_inter->data->interactions; 
-			foreach($drug_inter->interactions as $sev=>$drug){
-				// sev = severity, drug is the single line in the array 
-				$title = $sev;
-				echo "<li><ul><li><strong class='int_name'>$title</strong></li><li><ul>";
-				foreach($drug as $nui=>$name)
-					// make a link in comma sep. list ..
-					echo "<li><a href='ndf.php?n=$nui'>".ucwords(strtolower($name))."</a></li>";
-				echo "</ul></li></ul></li>";
-				
-				}
-
-		echo "</ul>";
-		}
+	function cleanDrugInteractions(){
+		self::loadNdf();
+		// no nui to lookup
+		// set the kind and check if kind is of 'DRUG_KIND"
+		$drug_inter = $this->ndfApi->findDrugInteractions($this->nui,3);
+		$drug_inter = json_decode($drug_inter);
+		$inputNui = $drug_inter->responseType->inputNui1;
+		$drug_inter = $drug_inter->groupInteractions->interactions[0];
+		if($inputNui != $drug_inter->concept->conceptNui)
+			$drug_inter->inputNui = $inputNui;
 		else
-			// report that NUI doesn't have any reported interactions at this time...
-			unset($drug_inter);
-				
+		// dont display the comment if the nui entered is the nui resolved
+			unset($drug_inter->comment);
+		$drug_inter->concept = $drug_inter->concept[0];
+		$drug_inter->name = $drug_inter->concept->conceptName;
+		$drug_inter->nui= $drug_inter->concept->conceptNui;
+		if($drug_inter->concept->conceptKind != 'DRUG_KIND')
+			$drug_inter->kind= $drug_inter->concept->conceptKind;
+		unset($drug_inter->concept);
+		
+		$drug_inter->groupInteractingDrugs = $drug_inter->groupInteractingDrugs[0]->interactingDrug;
+		foreach($drug_inter->groupInteractingDrugs as $loc=>$drug){
+			$drug->name = $drug->concept[0]->conceptName;
+			$drug_nui = $drug->concept[0]->conceptNui;
+			$drug_sev = $drug->severity;
+			if($drug->concept[0]->conceptKind != 'DRUG_KIND')
+				$drug->kind = $drug->concept[0]->conceptKind;
+			unset($drug->concept);
+			unset($drug_inter->groupInteractingDrugs);
+			unset($drug->severity);
+			
+			// for interactions .. are currently only checked for drug_kinds.. but just incase this is here..
+			// display functions will need to be modified..
+			if($drug->kind)
+				$drug_inter->interactions[$drug_sev][$drug_nui] = $drug;
+			else
+				$drug_inter->interactions[$drug_sev][$drug_nui] = $drug->name;
+		
+		}
+
+		if(COUCH){
+			$this->drug_inter = true;
+			$drug_inter_p = json_encode($drug_inter);
+			$this->drugInteraction = json_encode($drug_inter);
+			// put couch SHOULD return the new record that gets stored .. instead of having to deal with two types of crap..
+			//$drug_inter = self::put_couch($drug_inter_p);
+		}
 	}
 	
-	function couchCheck($type=false){
+	function couchCheck(){
 		if(COUCH && $_POST){
 		// check if it already exists first ...
 		// always get fresh cache token ...
 			$couch_token = obcer::cache_token('db') . ($type == '_ml' || $type == '_di'?$type:NULL);
-			//echo $couch_token;
-			
+
 			if(!class_exists('APIBaseClass') && !$this->couch){
 				require('APIBaseClass.php');
 			}
@@ -584,61 +445,21 @@ class rxNormRef{
 					
 			}
 			$tester = trim($this->couch->_request("/$couch_token",GET));
-			
-			if($type == '_ml'){
-			//	echo stripcslashes($tester);
-				$tester = json_decode($tester,true);
-				//echo print_r($tester);
-				return $tester;
-			}
-			
-			if($tester =='{"error":"not_found","reason":"missing"}' || $tester == '{"error":"not_found","reason":"deleted"}' || $tester == '' || $tester == false){
-					$this->couch_errors['couchCheck'] = $tester;
-				if(COUCH_VIEW == true){
-					
-					$this->couch->new_request(COUCH_HOST . "/" . COUCH_DB);
-					$tester = trim($this->couch->_request("/$couch_token",GET));
-					if($tester !='{"error":"not_found","reason":"missing"}' && $tester != '{"error":"not_found","reason":"deleted"}' && $tester != '' && $tester != false){
-						// let stats know that it was served up from 'view only' couch db
-						$this->cache = 5;
-						return json_decode($tester);
-						}else{
-						
-						$this->couch_errors['couchCheck_COUCH_VIEW'] = $tester;
-						}
-				}
 
-				if($type !='di')
-					unset($this->cache);
-				else
-					unset($this->cache_di);
+			if($tester =='{"error":"not_found","reason":"missing"}' || $tester == '{"error":"not_found","reason":"deleted"}' || $tester == '' || $tester == false){
+				$this->couch_errors['couchCheck'] = $tester;
+				unset($this->cache);
 				return false;
 				}
 			else{
-			
-			//	echo $tester;
 			// mainly for reporting where the cache is coming from for debugging purposes
-				if(COUCH_VIEW == true){
-					$this->cache = 5;
-					return json_decode($tester);
-				}
-				
-				if($type=='_ml'){
-					$this->cache_ml = true;
-					return json_decode($tester);
-				}
+				$this->cache =4;
+				return json_decode($tester);
 
-				if($type !='_di'){
-					$this->cache =4;
-					return json_decode($tester);
-				}else{
-					$this->cache_di = true;
-					
-					return json_decode($tester);
-				}
 			}
 		}
 	}
+	
 	function clean_ndf($data){
 	// creates new more efficent ndf data model
 		foreach($data as $a=>$b){
@@ -722,98 +543,35 @@ class rxNormRef{
 			unset($data['NUI'],$data['kind']);
 		return $data;
 	}
-	function put_couch($xml,$r=NULL,$n=NULL,$ml=false){
-	
-		if($this->nui && $ml == true){
-		// store a medline record ...
-	
-			$insert = '{"_id": "'.obcer::cache_token('db') . '_ml'.'",
-			"nui":"'.$this->nui.'",
-			"kind":"MEDLINE",
-			"data":'.str_replace("'","'\''",$xml).'}';
-		//	die($insert);
-		 
-		
-		}else{
-		
-		
-		// couch stores a slightly more efficent model for easier lookups and does not store empty concept groups
-			// stores it flat out i dont want that ...
-			if($_POST['nui'] && $this->kind != 'DRUG_KIND'){	
-				$result = json_decode($xml,true);
-				$data = $result['fullConcept'];
-				$nui = $data['conceptNui'];
-				$name = $data['conceptName'];
-				$kind = $data['conceptKind'];
-				unset($data['conceptNui'],$data['conceptName'],$data['conceptKind']);
-				// group associations need work too @!! gotta write this for the non 'find concepts == on' too 
-				$data = self::clean_ndf($data);
-				if($data == NULL)
-					return false;
-				if($data['NUI'] == $nui) unset($data['groupProperties']['NUI']);
-				// next append the couch stuff to the data .. not sure how ... could just decode them both before inserting...
-				$data = json_encode($data);
-				$insert = '{"_id": "'.$this->cache_token.'",
-				"nui":"'.$nui.'",
-				"name":"'.$name.'",
-				"kind":"'.$kind.'",
-				"data":'.$data.'}';
-				
-			}elseif($r!=NULL){
-			// stores regular rxnorm record 
-				// re render cache token just incase the term isn't properly rendered
-				$this->cache_token = obcer::cache_token('db');
-				$insert = '{"_id": "'.$this->cache_token.'",
-				"rxcui":"'.($r!=NULL?$r:'').'",
-				"data":'.$xml.'}';
-	
-			}elseif($this->nui && $this->kind == 'DRUG_KIND'){
-			// since nui drugkind is set after the cache is returned this should be ok 
-			// this is for drug interactions with NUI's ... this is slightly confusing
-			// add drug interaction to cache token so we can retreve it based on the post var ..
-				$insert = '{"_id": "'.obcer::cache_token('db') . '_di'.'",
-				"nui":"'.$this->nui.'",
-				"kind":"DRUG_INTERACTION",
-				"data":'.$xml.'}';
-	
-			}
-		
-		
+
+	function put_couch($xml,$r=NULL){
+		// re work this function to process both rxnorm ndf records
+		if($r!=NULL){
+				// stores regular rxnorm record 
+					// re render cache token just incase the term isn't properly rendered
+					$this->cache_token = obcer::cache_token('db');
+					$insert = '{"_id": "'.$this->cache_token.'",
+					"rxcui":"'.($r!=NULL?$r:'').'",
+					"data":'.$xml.'}';
+					
 		}
-		$exec_line = "curl -X PUT '" . COUCH_HOST . '/' . COUCH_DB . '/'.$this->cache_token .($this->kind=='DRUG_KIND' && $this->drug_inter?'_di':NULL) .($ml==true?'_ml':NULL)."' -d \ '" . $insert ."'".' -H "Content-type: application/json"' ;
 		
-		//die($exec_line);
-		
-		// DRUG interactions still not appearing on first page load ... doesnt seem to be cached until second page load .. probably depending on a variable from a cached record that isnt there yet...
-		// if this line fails.. and its common just put back out there (json utf issue that needs some work)
+		$exec_line = "curl -X PUT '" . COUCH_HOST . '/' . COUCH_DB . '/'.$this->cache_token ."' -d \ '" . $insert ."'".' -H "Content-type: application/json"' ;
 		$exec_line = exec($exec_line);
-		// this is running and not checking for the appropriate record, find another way to check
-		// get first couple of chars to see if 'ok:true' is found
-		//{"ok":true,"id":"n0000000007__on","rev":"1-0c0aad438c4b12fdf1fbddbb4764f21a"}
-		$exc_check = explode(',',$exec_line);
-		if(trim($exc_check[0]) == '{"ok":true'){
-		// render from couch instead of object.. probably not great idea ... but also checks drug interactions when available ..
-			
-			if($ml == false && $this->kind != 'DRUG_KIND' && $_POST['nui'])	
-				self::procResult(json_decode($insert));
-			if($this->kind == 'DRUG_KIND'){
-				// look up drug interaction ?
-					self::drugInteractions();
-			}	
-			// this needs to be different for durg interaction ???
-		}elseif($ml == false){
-			// log error (not cached)
-			$this->couch_errors ['put_couch']= $exec_line;
-			//self::procResult(json_decode($insert));
-		}
 		
+		$exc_check = explode(',',$exec_line);
+		if(trim($exc_check[0]) != '{"ok":true')
+			$this->couch_errors ['put_couch']= $exec_line;
+
 		// don't have to return anything do i?
 		// return the inserted record to be decoded json ...
 		return  ($xml?json_decode($insert): false);
 
 	}
+	
 	function make_xml($id,$formatted=false){
 	// get rid of this function and handle via couchCheck /put_couch
+	// needs to be re-written ... . and these checks handled via post check
 		if(COUCH && !$this->cache){
 			$xml = self::couchCheck();
 			if($xml != false){
@@ -873,6 +631,7 @@ class rxNormRef{
 				}
 				
 				if(COUCH && !$this->cache){
+				// only thing to use put_couch for now... put couch bloated and unuseful...
 					$return = self::put_couch($xml,$rxcui);
 					}
 				
@@ -880,6 +639,7 @@ class rxNormRef{
 		}
 		return $return;
 		 }
+	
 	function displayRxNorm($new_object){
 	// to do .. turn dose forms into a comma seperated list , without links.
 	// do the same for brand names (if multiples exist) but w create links. MIN PIN IN
@@ -895,5 +655,114 @@ class rxNormRef{
 				}
 		return ($return?$return:false);
 	}
-}
+	
+	function displayDrugInteractions($drug_inter){
+
+		echo '
+			<ul>
+			<li class="a_title"><h3>Drug Interactions</h3></li>
+			'.($drug_inter->comment?'<li class="d_int_comment"><ul><li><p>'.$drug_inter->comment."</p></li>":NULL)."</ul></li>";
+				// json decode moves the object around a wee bit..
+			if($drug_inter->interactions)	
+
+				foreach($drug_inter->interactions as $sev=>$drug){
+					// sev = severity, drug is the single line in the array 
+					$title = $sev;
+					echo "<li><ul><li><strong class='int_name'>$title</strong></li><li><ul>";
+					foreach($drug as $nui=>$name)
+						// make a link in comma sep. list ..
+						echo "<li><a href='ndf.php?n=$nui'>".ucwords(strtolower($name))."</a></li>";
+					echo "</ul></li></ul></li>";
+					
+					}
+
+		echo "</ul>";
+	
+	}
+	
+	function loadRxNorm(){
+		if(!class_exists('APIBaseClass')) 
+			require 'APIBaseClass.php';	
+		if(!class_exists('rxNormApi')){
+			require 'rxNormApi.php';
+			$this->api = new rxNormApi;	
+			$this->api->setOutputType('json');	
+		}
+	}
+	
+	function loadNdf(){
+		if(!class_exists('APIBaseClass')) require 'APIBaseClass.php';
+			if(!class_exists('ndfRTApi')){
+				require 'ndfRTApi.php';
+				$this->ndfApi = new ndfRTApi;
+				$this->ndfApi->setOutputType('json');
+			}
+	}
+	
+	function loadRxTerms(){
+		if(!class_exists('APIBaseClass')) require 'APIBaseClass.php';
+			if(!class_exists('rxTermsApi')){
+				require 'rxTermsApi.php';
+				$this->rxTermsApi = new rxTermsApi(null,'json');
+				$this->rxTermsVersion = $this->rxTermsApi->getRxTermsVersion();
+			}
+	}
+	
+	function loadMedLine(){
+			if(!class_exists('APIBaseClass')) require 'APIBaseClass.php';
+			if(!class_exists('medlinePlusApi')){
+				require 'medlinePlusApi.php';
+				// little override that should hope to return json responses... with some conversion..
+				$this->medlinePlusApi = new medlinePlusApi(null,'json');
+			}
+	}
+	
+	function stats(){
+		if(COUCH_STAT == true){
+			// using one letter keys for smaller footprint
+			// bare bones stat options ..
+			$insert['i'] = $_SERVER['REMOTE_ADDR']; 
+			$insert['t'] = (float) sprintf("%.4f", (((float) array_sum(explode(' ',microtime())))-$this->start_time));
+			$insert['m'] = (int) round(memory_get_usage() / 1024);
+			
+			if(COUCH_STAT_VERBOSE == true){
+			// extra options.. user agent is the 'heaviest' .. consider converting to codes or storing unfound user agents to a agents database ?
+			// perhaps couch can be smart about it and compress similar values? we'll see...
+				if(COUCH_STAT_UA == true)
+					$insert['ua'] = $_SERVER['HTTP_USER_AGENT'];
+				$insert['rt'] = (int) $_SERVER['REQUEST_TIME'];
+				$insert['ref'] = str_replace('http://','',$_SERVER['HTTP_REFERER']);
+				if( trim($insert['ref']) =='' || $insert['ref'] == false || $insert['ref'] == NULL ) unset($insert['ref']);
+				$insert['uri'] = $_SERVER['REQUEST_URI'];
+			}
+			if($this->rxcui)
+				$insert ['r'] = $this->rxcui;
+			elseif($this->nui){
+				// remove the N to store as an integer .. maybe even remove all the zeros ?
+				$insert ['n'] = explode('N',$this->nui);
+				$insert ['n'] = (int)$insert ['n'][1];
+				}
+			$insert = json_encode($insert);
+			$exec_line = "curl -X POST '" . COUCH_HOST . COUCH_STAT . '/'. "' -d \ '" . $insert ."'".' -H "Content-type: application/json"' ;
+			exec($exec_line);	
+		}
+		if(COUCH_ERRORS == true){
+			if($this->couch_errors){
+				$couch_errors = "\n";
+				foreach($this->couch_errors as $where=>$error){
+				// give basic dump of json ? could get fancy but for debugging/logging purposes
+					$couch_errors .= "\tinside of :: $where $error\n";
+				}
+			}
+		
+		}
+		return ($this->cache?'<p>Rendering from Couch Database' . ($this->cache == 5? ' from view only couchdb':NULL) . '</p>' :NULL) . ($couch_errors?"\n<small><strong>Encountered couch api errors:</strong> <br/> $couch_errors</small>\n":NULL).
+			"<em>Memory use: " . round(memory_get_usage() / 1024) . 'k'. "</em> <p><em>Load time : "
+	. sprintf("%.4f", (((float) array_sum(explode(' ',microtime())))-$this->start_time)) . " seconds</em></p><p><em>Overhead memory : ".$this->oh_memory." k</em></p>";
+
+	}
+	
+	
+
+	}
  new RxNormRef;
