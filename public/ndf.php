@@ -6,7 +6,7 @@ echo' <link rel="stylesheet" type="text/css" href="css/ndf.css" />';
 
 
 if($_GET['n'] ){
-	$_POST['nui'] = $_GET['n'];$_POST['findConcepts'] = 'on';
+	$_POST['nui'] = $_GET['n'];
 }
 
 
